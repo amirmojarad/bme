@@ -10,12 +10,13 @@ type DeviceEntities []DeviceEntity
 
 type DeviceEntity struct {
 	gorm.Model
-	Title       string
-	Description string
-	Status      string
-	CreatedBy   uint
-	UpdatedBy   uint
-	DeletedBy   uint
+	DeviceErrors DeviceErrorEntities `gorm:"foreignkey:DeviceID"`
+	Title        string
+	Description  string
+	Status       string
+	CreatedBy    uint
+	UpdatedBy    uint
+	DeletedBy    uint
 }
 
 func (DeviceEntity) TableName() string {
@@ -41,6 +42,19 @@ func (entity DeviceEntity) toSvc() service.DeviceEntity {
 		CreatedBy:   entity.CreatedBy,
 		UpdatedBy:   entity.UpdatedBy,
 		DeletedBy:   entity.DeletedBy,
+	}
+}
+
+func (entity DeviceEntity) toSvcWithDetails() service.DeviceEntity {
+	return service.DeviceEntity{
+		ID:                  entity.ID,
+		DeviceErrorEntities: entity.DeviceErrors.toSvc(),
+		Title:               entity.Title,
+		Description:         entity.Description,
+		Status:              constants.DeviceStatus(entity.Status),
+		CreatedBy:           entity.CreatedBy,
+		UpdatedBy:           entity.UpdatedBy,
+		DeletedBy:           entity.DeletedBy,
 	}
 }
 

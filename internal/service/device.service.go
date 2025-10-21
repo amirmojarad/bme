@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bme/internal/constants"
 	"context"
 )
 
@@ -11,21 +10,24 @@ type DeviceRepository interface {
 	List(ctx context.Context, f ListDevicesFilter) (ListDevicesResponse, error)
 }
 
-type Device struct {
-	repo DeviceRepository
+type DeviceDeviceErrorRepository interface {
+	BulkCreate(ctx context.Context, req DeviceErrorBulkCreateRequest) error
+	List(ctx context.Context, f DeviceErrorListFilter) (DeviceErrorListResponse, error)
 }
 
-func NewDevice(repo DeviceRepository) *Device {
+type Device struct {
+	repo            DeviceRepository
+	deviceErrorRepo DeviceDeviceErrorRepository
+}
+
+func NewDevice(repo DeviceRepository, deviceErrorRepo DeviceDeviceErrorRepository) *Device {
 	return &Device{
-		repo: repo,
+		repo:            repo,
+		deviceErrorRepo: deviceErrorRepo,
 	}
 }
 
 func (s *Device) Create(ctx context.Context, req CreateDeviceRequest) error {
-	if req.Status.IsEmpty() {
-		req.Status = constants.DeviceStatusActive
-	}
-	
 	return s.repo.Create(ctx, req)
 }
 
@@ -35,4 +37,12 @@ func (s *Device) Get(ctx context.Context, f GetDeviceFilter) (DeviceEntity, erro
 
 func (s *Device) List(ctx context.Context, f ListDevicesFilter) (ListDevicesResponse, error) {
 	return s.repo.List(ctx, f)
+}
+
+func (s *Device) BulkCreateDeviceErrors(ctx context.Context, req DeviceErrorBulkCreateRequest) error {
+	return s.deviceErrorRepo.BulkCreate(ctx, req)
+}
+
+func (s *Device) ListDeviceErrors(ctx context.Context, f DeviceErrorListFilter) (DeviceErrorListResponse, error) {
+	return s.deviceErrorRepo.List(ctx, f)
 }

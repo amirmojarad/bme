@@ -12,6 +12,8 @@ type DeviceService interface {
 	Create(ctx context.Context, req service.CreateDeviceRequest) error
 	Get(ctx context.Context, f service.GetDeviceFilter) (service.DeviceEntity, error)
 	List(ctx context.Context, f service.ListDevicesFilter) (service.ListDevicesResponse, error)
+	BulkCreateDeviceErrors(ctx context.Context, req service.DeviceErrorBulkCreateRequest) error
+	ListDeviceErrors(ctx context.Context, f service.DeviceErrorListFilter) (service.DeviceErrorListResponse, error)
 }
 
 type Device struct {
@@ -56,7 +58,7 @@ func (c *Device) Create(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{})
+	ctx.JSON(http.StatusCreated, gin.H{})
 }
 
 func (c *Device) Get(ctx *gin.Context) {
@@ -101,4 +103,64 @@ func (c *Device) List(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toViewListDevicesResp(resp))
+}
+
+func (c *Device) BulkCreateDeviceErrors(ctx *gin.Context) {
+	var (
+		req    DeviceErrorBulkCreateRequest
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.RequestedBy = header.UserID
+
+	if err := c.svc.BulkCreateDeviceErrors(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{})
+}
+
+func (c *Device) ListDeviceErrors(ctx *gin.Context) {
+	var f DeviceErrorListFilter
+
+	if err := ctx.ShouldBindUri(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	resp, err := c.svc.ListDeviceErrors(ctx, f.toSvc())
+	if err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toViewListDeviceErrorsResp(resp))
 }

@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"strings"
 )
 
 type Device struct {
@@ -51,7 +52,7 @@ func (r *Device) List(ctx context.Context, f service.ListDevicesFilter) (service
 	}
 
 	if f.TitleStartsWith != nil {
-		appendAppendStartsWith(query, "title", *f.TitleStartsWith, true)
+		appendAppendStartsWith(query, "title", strings.ToLower(*f.TitleStartsWith), true)
 	}
 
 	if err := query.Debug().Find(&entities).Error; err != nil {

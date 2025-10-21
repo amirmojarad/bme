@@ -35,7 +35,7 @@ func (m *Auth) Authorize(ctx *gin.Context) {
 	authorizationHeader := ctx.GetHeader(AuthorizationHeader)
 
 	if authorizationHeader == "" {
-		writeUnAuthorizedError(ctx, errorext.NewAuth(errors.New(fmt.Sprintf("%s header is empty", AuthorizationHeader)), errorext.ErrUnAuthorized))
+		writeUnAuthorizedErrorWithAbort(ctx, errorext.NewAuth(errors.New(fmt.Sprintf("%s header is empty", AuthorizationHeader)), errorext.ErrUnAuthorized))
 
 		return
 	}
@@ -44,7 +44,7 @@ func (m *Auth) Authorize(ctx *gin.Context) {
 
 	userClaims, err := m.jwt.ValidateToken(token, m.secret)
 	if err != nil {
-		writeUnAuthorizedError(ctx, errorext.NewAuth(errors.New(fmt.Sprintf("%s is empty", AuthorizationHeader)), errorext.ErrUnAuthorized))
+		writeUnAuthorizedErrorWithAbort(ctx, errorext.NewAuth(errors.New(fmt.Sprintf("%s is empty", AuthorizationHeader)), errorext.ErrUnAuthorized))
 
 		return
 	}
@@ -64,4 +64,10 @@ func removeBearerFromAuthorizationHeader(authorizationHeader string) string {
 
 func writeUnAuthorizedError(ctx *gin.Context, err error) {
 	ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+}
+
+func writeUnAuthorizedErrorWithAbort(ctx *gin.Context, err error) {
+	ctx.JSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
+
+	ctx.Abort()
 }

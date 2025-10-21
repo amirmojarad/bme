@@ -61,3 +61,17 @@ func convertQ[T uint](q *string) (*T, *string) {
 	numericValAsUint := T(uint(numericVal))
 	return &numericValAsUint, nil
 }
+
+func qAs(q *string) (idStartsWith *string, titleStartsWith *string) {
+	numericVal, q := convertQ[uint](q)
+	if numericVal != nil {
+		tmp := strconv.Itoa(int(*numericVal))
+		idStartsWith = &tmp
+	}
+
+	if q != nil {
+		titleStartsWith = q
+	}
+
+	return idStartsWith, titleStartsWith
+}

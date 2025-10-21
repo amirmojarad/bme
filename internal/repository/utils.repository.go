@@ -10,5 +10,5 @@ func appendAppendStartsWith(query *gorm.DB, columnName, value string, toLowerCas
 		columnName = fmt.Sprintf("lower(%s)", columnName)
 	}
 
-	query.Where(fmt.Sprintf(`%s like '%%%s%%'`, columnName, value))
+	query.Where(fmt.Sprintf(`%s like '%s%%'`, columnName, value))
 }
