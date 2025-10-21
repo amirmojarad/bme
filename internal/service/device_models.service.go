@@ -6,11 +6,15 @@ import (
 )
 
 type (
-	DeviceEntities                    []DeviceEntity
-	DeviceErrorCreateRequests         []DeviceErrorCreateRequest
-	DeviceErrorEntities               []DeviceErrorEntity
-	TroubleShootingStepEntities       []TroubleshootingStepEntity
-	TroubleShootingStepCreateRequests []TroubleShootingStepCreateEntity
+	DeviceEntities                                 []DeviceEntity
+	DeviceErrorCreateRequests                      []DeviceErrorCreateRequest
+	DeviceErrorEntities                            []DeviceErrorEntity
+	TroubleshootingStepEntities                    []TroubleshootingStepEntity
+	TroubleShootingStepCreateRequests              []TroubleShootingStepCreateEntity
+	TroubleshootingStepsToStepsEntities            []TroubleshootingStepsToStepsEntity
+	TroubleshootingStepsToStepsCreateEntities      []TroubleshootingStepsToStepsCreateEntity
+	TroubleshootingStepNextStepEntities            []TroubleshootingStepNextStepEntity
+	TroubleshootingStepsToStepsWithDetailsEntities []TroubleshootingStepsToStepsWithDetailsEntity
 )
 
 type DeviceEntity struct {
@@ -92,6 +96,7 @@ type TroubleshootingStepEntity struct {
 	Description   string
 	Hints         map[string]any
 	Status        constants.TroubleshootingStepStatus
+	NextSteps     TroubleshootingStepEntities
 	CreatedBy     uint
 	UpdatedBy     uint
 	DeletedBy     uint
@@ -111,7 +116,7 @@ type TroubleShootingStepCreateEntity struct {
 	UpdatedBy     uint
 }
 type TroubleshootingStepListResponse struct {
-	Entities TroubleShootingStepEntities
+	Entities TroubleshootingStepEntities
 }
 type TroubleshootingBulkCreateRequest struct {
 	Entities      TroubleShootingStepCreateRequests
@@ -132,6 +137,62 @@ type TroubleshootingStepGetFilter struct {
 	DeviceID      *uint
 	DeviceErrorID *uint
 	ID            *uint
+	WithNextSteps bool
+}
+
+type TroubleshootingStepsToStepsWithDetailsEntity struct {
+	ID                            uint
+	FromStepID                    uint
+	FromTroubleshootingStepEntity TroubleshootingStepEntity
+	ToStepID                      uint
+	ToTroubleshootingStepEntity   TroubleshootingStepEntity
+	Priority                      constants.TroubleshootingStepsToStepsPriority
+	PriorityTitle                 string
+	CreatedBy                     uint
+	UpdatedBy                     uint
+	DeletedBy                     uint
+	CreatedAt                     time.Time
+	UpdatedAt                     time.Time
+	DeletedAt                     *time.Time
+}
+
+type TroubleshootingStepsToStepsEntity struct {
+	ID         uint
+	FromStepID uint
+	ToStepID   uint
+	Priority   int
+	CreatedBy  uint
+	UpdatedBy  uint
+	DeletedBy  uint
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	DeletedAt  *time.Time
+}
+
+type TroubleshootingStepsToStepsCreateEntity struct {
+	FromStepID uint
+	ToStepID   uint
+	Priority   constants.TroubleshootingStepsToStepsPriority
+	CreatedBy  uint
+	UpdatedBy  uint
+}
+
+type TroubleshootingStepsToStepsCreateReq struct {
+	Entities    TroubleshootingStepsToStepsCreateEntities
+	RequestedBy uint
+}
+
+type TroubleshootingStepNextStepEntity struct {
+	ToStepID uint
+	Priority constants.TroubleshootingStepsToStepsPriority
+}
+
+type CreateTroubleshootingNextStepsReq struct {
+	DeviceID      uint
+	DeviceErrorID uint
+	ID            uint
+	NextSteps     TroubleshootingStepNextStepEntities
+	RequestedBy   uint
 }
 
 func (f GetDeviceFilter) FilterMap() map[string]any {
@@ -206,4 +267,23 @@ func (f TroubleshootingStepListFilter) FilterMap() map[string]any {
 	}
 
 	return filterMap
+}
+
+func (req CreateTroubleshootingNextStepsReq) toTroubleshootingStepToStepsBulkCreateRequest() TroubleshootingStepsToStepsCreateReq {
+	entities := make(TroubleshootingStepsToStepsCreateEntities, 0)
+
+	for _, entity := range req.NextSteps {
+		entities = append(entities, TroubleshootingStepsToStepsCreateEntity{
+			FromStepID: req.ID,
+			ToStepID:   entity.ToStepID,
+			Priority:   entity.Priority,
+			CreatedBy:  req.RequestedBy,
+			UpdatedBy:  req.RequestedBy,
+		})
+	}
+
+	return TroubleshootingStepsToStepsCreateReq{
+		Entities:    entities,
+		RequestedBy: 0,
+	}
 }

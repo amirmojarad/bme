@@ -22,21 +22,27 @@ type DeviceTroubleshootingStepsRepository interface {
 	UpdateHints(ctx context.Context, id uint, hints map[string]any) error
 }
 
+type DeviceTroubleshootingStepsToStepsRepository interface {
+	BulkCreate(ctx context.Context, req TroubleshootingStepsToStepsCreateReq) error
+}
 type Device struct {
-	repo                    DeviceRepository
-	deviceErrorRepo         DeviceDeviceErrorRepository
-	troubleshootingStepRepo DeviceTroubleshootingStepsRepository
+	repo                            DeviceRepository
+	deviceErrorRepo                 DeviceDeviceErrorRepository
+	troubleshootingStepRepo         DeviceTroubleshootingStepsRepository
+	troubleshootingStepsToStepsRepo DeviceTroubleshootingStepsToStepsRepository
 }
 
 func NewDevice(
 	repo DeviceRepository,
 	deviceErrorRepo DeviceDeviceErrorRepository,
 	troubleshootingStepRepo DeviceTroubleshootingStepsRepository,
+	troubleshootingStepsToStepsRepo DeviceTroubleshootingStepsToStepsRepository,
 ) *Device {
 	return &Device{
-		repo:                    repo,
-		deviceErrorRepo:         deviceErrorRepo,
-		troubleshootingStepRepo: troubleshootingStepRepo,
+		repo:                            repo,
+		deviceErrorRepo:                 deviceErrorRepo,
+		troubleshootingStepRepo:         troubleshootingStepRepo,
+		troubleshootingStepsToStepsRepo: troubleshootingStepsToStepsRepo,
 	}
 }
 
@@ -70,4 +76,8 @@ func (s *Device) GetTroubleshootingStep(ctx context.Context, f TroubleshootingSt
 
 func (s *Device) ListTroubleshootingSteps(ctx context.Context, f TroubleshootingStepListFilter) (TroubleshootingStepListResponse, error) {
 	return s.troubleshootingStepRepo.List(ctx, f)
+}
+
+func (s *Device) CreateTroubleshootingNextSteps(ctx context.Context, req CreateTroubleshootingNextStepsReq) error {
+	return s.troubleshootingStepsToStepsRepo.BulkCreate(ctx, req.toTroubleshootingStepToStepsBulkCreateRequest())
 }

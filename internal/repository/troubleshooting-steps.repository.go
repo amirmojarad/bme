@@ -48,10 +48,18 @@ func (r *TroubleshootingSteps) List(ctx context.Context, f service.Troubleshooti
 func (r *TroubleshootingSteps) Get(ctx context.Context, f service.TroubleshootingStepGetFilter) (service.TroubleshootingStepEntity, error) {
 	var entity TroubleshootingStepEntity
 
-	if err := r.DB(ctx).Where(f.FilterMap()).First(&entity).Error; err != nil {
+	query := r.DB(ctx).Where(f.FilterMap())
+
+	if f.WithNextSteps {
+		query.Preload("NextSteps").Preload("NextSteps.ToTroubleshootingStepEntity")
+	}
+
+	if err := query.Debug().First(&entity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return service.TroubleshootingStepEntity{}, errorext.NewNotFound(err, errorext.ErrNotFound)
 		}
+
+		return service.TroubleshootingStepEntity{}, errors.WithStack(err)
 	}
 
 	return entity.toSvc(), nil

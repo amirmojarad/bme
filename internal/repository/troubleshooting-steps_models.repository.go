@@ -15,7 +15,8 @@ type TroubleshootingStepEntity struct {
 	DeviceID          uint
 	DeviceEntity      DeviceEntity `gorm:"foreignkey:DeviceID" reference:"ID"`
 	DeviceErrorID     uint
-	DeviceErrorEntity DeviceErrorEntity `gorm:"foreignKey:DeviceErrorID" reference:"ID"`
+	DeviceErrorEntity DeviceErrorEntity                   `gorm:"foreignKey:DeviceErrorID" reference:"ID"`
+	NextSteps         TroubleshootingStepsToStepsEntities `gorm:"foreignKey:FromStepID;references:ID"`
 	Title             string
 	Description       string
 	Hints             map[string]any `gorm:"serializer:json"`
@@ -69,11 +70,12 @@ func (entity TroubleshootingStepEntity) toSvc() service.TroubleshootingStepEntit
 		CreatedAt:     entity.CreatedAt,
 		UpdatedAt:     entity.UpdatedAt,
 		DeletedAt:     &entity.DeletedAt.Time,
+		NextSteps:     entity.NextSteps.toSvcTroubleshootingEntities(),
 	}
 }
 
-func (entities TroubleShootingStepEntities) toSvc() service.TroubleShootingStepEntities {
-	result := make(service.TroubleShootingStepEntities, 0, len(entities))
+func (entities TroubleShootingStepEntities) toSvc() service.TroubleshootingStepEntities {
+	result := make(service.TroubleshootingStepEntities, 0, len(entities))
 
 	for _, entity := range entities {
 		result = append(result, entity.toSvc())

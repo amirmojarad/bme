@@ -17,6 +17,7 @@ type DeviceService interface {
 	BulkCreateTroubleshootingSteps(ctx context.Context, req service.TroubleshootingBulkCreateRequest) error
 	GetTroubleshootingStep(ctx context.Context, f service.TroubleshootingStepGetFilter) (service.TroubleshootingStepEntity, error)
 	ListTroubleshootingSteps(ctx context.Context, f service.TroubleshootingStepListFilter) (service.TroubleshootingStepListResponse, error)
+	CreateTroubleshootingNextSteps(ctx context.Context, req service.CreateTroubleshootingNextStepsReq) error
 }
 
 type Device struct {
@@ -212,6 +213,12 @@ func (c *Device) GetTroubleshootingStep(ctx *gin.Context) {
 		return
 	}
 
+	if err := ctx.ShouldBindQuery(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
 	resp, err := c.svc.GetTroubleshootingStep(ctx, f.toSvc())
 	if err != nil {
 		writeErrorResponse(ctx, err, c.logger)
@@ -245,4 +252,39 @@ func (c *Device) ListTroubleshootingSteps(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toViewTroubleshootingStepListResponse(resp))
+}
+
+func (c *Device) CreateTroubleshootingNextSteps(ctx *gin.Context) {
+	var (
+		req    CreateTroubleshootingNextStepsReq
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.RequestedBy = header.UserID
+
+	if err := c.svc.CreateTroubleshootingNextSteps(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{})
 }
