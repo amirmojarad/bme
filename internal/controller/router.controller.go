@@ -14,4 +14,8 @@ func SetupDeviceRoutes(router gin.IRoutes, ctrl *Device) {
 
 	router.POST("/:id/errors", ctrl.BulkCreateDeviceErrors)
 	router.GET("/:id/errors", ctrl.ListDeviceErrors)
+
+	router.POST("/:id/errors/:error_id/troubleshooting-steps", ctrl.BulkCreateTroubleshootingSteps)
+	router.GET("/:id/errors/:error_id/troubleshooting-steps", ctrl.ListTroubleshootingSteps)
+	router.GET("/:id/errors/:error_id/troubleshooting-steps/:troubleshooting_step_id", ctrl.GetTroubleshootingStep)
 }

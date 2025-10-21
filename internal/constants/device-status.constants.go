@@ -16,3 +16,13 @@ func (enum DeviceStatus) String() string {
 func (enum DeviceStatus) IsEmpty() bool {
 	return enum.String() == ""
 }
+
+func (enum DeviceStatus) OrDefault() *DeviceStatus {
+	if enum == "" {
+		defaultValue := DeviceStatusDefaultOnCreation
+
+		return &defaultValue
+	}
+
+	return &enum
+}

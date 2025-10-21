@@ -10,6 +10,9 @@ type (
 	DeviceEntities            []DeviceEntity
 	DeviceErrorCreateRequests []DeviceErrorCreateRequest
 	DeviceErrorEntities       []DeviceErrorEntity
+
+	TroubleShootingStepEntities       []TroubleShootingStepEntity
+	TroubleShootingStepCreateRequests []TroubleShootingStepCreateEntity
 )
 
 type DeviceEntity struct {
@@ -29,8 +32,8 @@ type GetDeviceFilter struct {
 }
 
 type ListDevicesFilter struct {
-	Q      *string                 `form:"q"`
-	Status *constants.DeviceStatus `json:"status,omitempty"`
+	Q      *string                `form:"q"`
+	Status constants.DeviceStatus `form:"status"`
 }
 
 type ListDevicesResponse struct {
@@ -57,13 +60,52 @@ type DeviceErrorBulkCreateRequest struct {
 }
 
 type DeviceErrorListFilter struct {
-	DeviceID uint                    `uri:"id" binding:"required"`
-	Q        *string                 `form:"q"`
-	Status   *constants.DeviceStatus `form:"status"`
+	DeviceID uint                        `uri:"id" binding:"required"`
+	Q        *string                     `form:"q"`
+	Status   constants.DeviceErrorStatus `form:"status"`
 }
 
 type DeviceErrorListResponse struct {
 	Items DeviceErrorEntities `json:"items"`
+}
+
+type TroubleShootingStepEntity struct {
+	ID            uint                                `json:"id"`
+	DeviceID      uint                                `json:"device_id"`
+	DeviceErrorID uint                                `json:"device_error_id"`
+	Title         string                              `json:"title"`
+	Description   string                              `json:"description"`
+	Hints         map[string]any                      `json:"hints"`
+	Status        constants.TroubleshootingStepStatus `json:"status"`
+}
+
+type TroubleShootingStepCreateEntity struct {
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Hints       map[string]any `json:"hints"`
+}
+type TroubleshootingStepListResponse struct {
+	Items TroubleShootingStepEntities `json:"items"`
+}
+
+type TroubleshootingBulkCreateRequest struct {
+	Items         TroubleShootingStepCreateRequests `json:"items"`
+	DeviceID      uint                              `uri:"id" binding:"required"`
+	DeviceErrorID uint                              `uri:"error_id" binding:"required"`
+	RequestedBy   uint                              `json:"-"`
+}
+
+type TroubleshootingStepGetFilter struct {
+	DeviceID      uint `uri:"id" binding:"required"`
+	DeviceErrorID uint `uri:"error_id" binding:"required"`
+	ID            uint `uri:"troubleshooting_step_id" binding:"required"`
+}
+
+type TroubleshootingStepsListFilter struct {
+	DeviceID      uint                                `uri:"id" binding:"required"`
+	DeviceErrorID uint                                `uri:"error_id" binding:"required"`
+	Q             *string                             `form:"q"`
+	Status        constants.TroubleshootingStepStatus `form:"status"`
 }
 
 func (req CreateDeviceRequest) validate() error {
@@ -122,7 +164,7 @@ func (f ListDevicesFilter) toSvc() service.ListDevicesFilter {
 	return service.ListDevicesFilter{
 		IdStartsWith:    idStartsWith,
 		TitleStartsWith: titleStartsWith,
-		Status:          nil,
+		Status:          f.Status.OrDefault(),
 	}
 }
 
@@ -159,7 +201,7 @@ func (f DeviceErrorListFilter) toSvc() service.DeviceErrorListFilter {
 		DeviceID:        &f.DeviceID,
 		IdStartsWith:    idStartsWith,
 		TitleStartsWith: titleStartsWith,
-		Status:          f.Status,
+		Status:          f.Status.OrDefault(),
 	}
 }
 
@@ -186,5 +228,85 @@ func toViewDeviceErrorEntity(svcEntity service.DeviceErrorEntity) DeviceErrorEnt
 		Title:       svcEntity.Title,
 		Description: svcEntity.Description,
 		Status:      svcEntity.Status,
+	}
+}
+
+func (req TroubleshootingBulkCreateRequest) toSvc() service.TroubleshootingBulkCreateRequest {
+	return service.TroubleshootingBulkCreateRequest{
+		Entities:      req.Items.toSvc(req.DeviceID, req.DeviceErrorID, req.RequestedBy),
+		RequestedBy:   req.RequestedBy,
+		DeviceID:      req.DeviceID,
+		DeviceErrorID: req.DeviceErrorID,
+	}
+}
+
+func (requests TroubleShootingStepCreateRequests) toSvc(deviceID, deviceErrorID, requestedBy uint) service.TroubleShootingStepCreateRequests {
+	result := make(service.TroubleShootingStepCreateRequests, 0, len(requests))
+
+	for _, request := range requests {
+		result = append(result, request.toSvc(deviceID, deviceErrorID, requestedBy))
+	}
+
+	return result
+}
+
+func (req TroubleShootingStepCreateEntity) toSvc(deviceID, deviceErrorID, requestedBy uint) service.TroubleShootingStepCreateEntity {
+	return service.TroubleShootingStepCreateEntity{
+		DeviceID:      deviceID,
+		DeviceErrorID: deviceErrorID,
+		Title:         req.Title,
+		Description:   req.Description,
+		Hints:         req.Hints,
+		Status:        constants.TroubleshootingStepStatusDefaultOnCreation,
+		CreatedBy:     requestedBy,
+		UpdatedBy:     requestedBy,
+	}
+}
+
+func toViewTroubleshootingStepEntity(entity service.TroubleshootingStepEntity) TroubleShootingStepEntity {
+	return TroubleShootingStepEntity{
+		ID:            entity.ID,
+		DeviceID:      entity.DeviceID,
+		DeviceErrorID: entity.DeviceID,
+		Title:         entity.Title,
+		Description:   entity.Description,
+		Hints:         entity.Hints,
+		Status:        entity.Status,
+	}
+}
+
+func (f TroubleshootingStepGetFilter) toSvc() service.TroubleshootingStepGetFilter {
+	return service.TroubleshootingStepGetFilter{
+		DeviceID:      &f.DeviceID,
+		DeviceErrorID: &f.DeviceErrorID,
+		ID:            &f.ID,
+	}
+}
+
+func (f TroubleshootingStepsListFilter) toSvc() service.TroubleshootingStepListFilter {
+	idStartsWith, titleStartsWith := qAs(f.Q)
+
+	return service.TroubleshootingStepListFilter{
+		IdStartsWith:    idStartsWith,
+		TitleStartsWith: titleStartsWith,
+		DeviceErrorID:   &f.DeviceErrorID,
+		DeviceID:        &f.DeviceID,
+		Status:          f.Status.OrDefault(),
+	}
+}
+
+func toViewTroubleshootingStepEntities(entities service.TroubleShootingStepEntities) TroubleShootingStepEntities {
+	result := make(TroubleShootingStepEntities, 0, len(entities))
+
+	for _, entity := range entities {
+		result = append(result, toViewTroubleshootingStepEntity(entity))
+	}
+
+	return result
+}
+
+func toViewTroubleshootingStepListResponse(response service.TroubleshootingStepListResponse) TroubleshootingStepListResponse {
+	return TroubleshootingStepListResponse{
+		Items: toViewTroubleshootingStepEntities(response.Entities),
 	}
 }

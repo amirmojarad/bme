@@ -14,6 +14,9 @@ type DeviceService interface {
 	List(ctx context.Context, f service.ListDevicesFilter) (service.ListDevicesResponse, error)
 	BulkCreateDeviceErrors(ctx context.Context, req service.DeviceErrorBulkCreateRequest) error
 	ListDeviceErrors(ctx context.Context, f service.DeviceErrorListFilter) (service.DeviceErrorListResponse, error)
+	BulkCreateTroubleshootingSteps(ctx context.Context, req service.TroubleshootingBulkCreateRequest) error
+	GetTroubleshootingStep(ctx context.Context, f service.TroubleshootingStepGetFilter) (service.TroubleshootingStepEntity, error)
+	ListTroubleshootingSteps(ctx context.Context, f service.TroubleshootingStepListFilter) (service.TroubleshootingStepListResponse, error)
 }
 
 type Device struct {
@@ -163,4 +166,83 @@ func (c *Device) ListDeviceErrors(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toViewListDeviceErrorsResp(resp))
+}
+
+func (c *Device) BulkCreateTroubleshootingSteps(ctx *gin.Context) {
+	var (
+		req    TroubleshootingBulkCreateRequest
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.RequestedBy = header.UserID
+
+	if err := c.svc.BulkCreateTroubleshootingSteps(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{})
+}
+
+func (c *Device) GetTroubleshootingStep(ctx *gin.Context) {
+	var f TroubleshootingStepGetFilter
+
+	if err := ctx.ShouldBindUri(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	resp, err := c.svc.GetTroubleshootingStep(ctx, f.toSvc())
+	if err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toViewTroubleshootingStepEntity(resp))
+}
+
+func (c *Device) ListTroubleshootingSteps(ctx *gin.Context) {
+	var f TroubleshootingStepsListFilter
+
+	if err := ctx.ShouldBindUri(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindQuery(&f); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	resp, err := c.svc.ListTroubleshootingSteps(ctx, f.toSvc())
+	if err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toViewTroubleshootingStepListResponse(resp))
 }

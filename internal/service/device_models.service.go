@@ -6,9 +6,11 @@ import (
 )
 
 type (
-	DeviceEntities            []DeviceEntity
-	DeviceErrorCreateRequests []DeviceErrorCreateRequest
-	DeviceErrorEntities       []DeviceErrorEntity
+	DeviceEntities                    []DeviceEntity
+	DeviceErrorCreateRequests         []DeviceErrorCreateRequest
+	DeviceErrorEntities               []DeviceErrorEntity
+	TroubleShootingStepEntities       []TroubleshootingStepEntity
+	TroubleShootingStepCreateRequests []TroubleShootingStepCreateEntity
 )
 
 type DeviceEntity struct {
@@ -61,7 +63,7 @@ type DeviceErrorCreateRequest struct {
 	DeviceID    uint
 	Title       string
 	Description string
-	Status      constants.DeviceStatus
+	Status      constants.DeviceErrorStatus
 }
 
 type DeviceErrorBulkCreateRequest struct {
@@ -75,11 +77,61 @@ type DeviceErrorListFilter struct {
 	IDs             []uint
 	TitleStartsWith *string
 	WithDetails     bool
-	Status          *constants.DeviceStatus
+	Status          *constants.DeviceErrorStatus
 }
 
 type DeviceErrorListResponse struct {
 	Entities DeviceErrorEntities
+}
+
+type TroubleshootingStepEntity struct {
+	ID            uint
+	DeviceID      uint
+	DeviceErrorID uint
+	Title         string
+	Description   string
+	Hints         map[string]any
+	Status        constants.TroubleshootingStepStatus
+	CreatedBy     uint
+	UpdatedBy     uint
+	DeletedBy     uint
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+	DeletedAt     *time.Time
+}
+
+type TroubleShootingStepCreateEntity struct {
+	DeviceID      uint
+	DeviceErrorID uint
+	Title         string
+	Description   string
+	Hints         map[string]any
+	Status        constants.TroubleshootingStepStatus
+	CreatedBy     uint
+	UpdatedBy     uint
+}
+type TroubleshootingStepListResponse struct {
+	Entities TroubleShootingStepEntities
+}
+type TroubleshootingBulkCreateRequest struct {
+	Entities      TroubleShootingStepCreateRequests
+	RequestedBy   uint
+	DeviceID      uint
+	DeviceErrorID uint
+}
+type TroubleshootingStepListFilter struct {
+	IdStartsWith    *string
+	IDs             []uint
+	TitleStartsWith *string
+	DeviceErrorID   *uint
+	DeviceID        *uint
+	Status          *constants.TroubleshootingStepStatus
+}
+
+type TroubleshootingStepGetFilter struct {
+	DeviceID      *uint
+	DeviceErrorID *uint
+	ID            *uint
 }
 
 func (f GetDeviceFilter) FilterMap() map[string]any {
@@ -107,6 +159,50 @@ func (f DeviceErrorListFilter) FilterMap() map[string]any {
 
 	if f.DeviceID != nil {
 		filterMap["device_id"] = f.DeviceID
+	}
+
+	if f.Status != nil {
+		filterMap["status"] = f.Status.String()
+	}
+
+	return filterMap
+}
+
+func (f TroubleshootingStepGetFilter) FilterMap() map[string]any {
+	filterMap := make(map[string]any)
+
+	if f.DeviceID != nil {
+		filterMap["device_id"] = f.DeviceID
+	}
+
+	if f.DeviceErrorID != nil {
+		filterMap["device_error_id"] = f.DeviceErrorID
+	}
+
+	if f.ID != nil {
+		filterMap["id"] = f.ID
+	}
+
+	return filterMap
+}
+
+func (f TroubleshootingStepListFilter) FilterMap() map[string]any {
+	filterMap := make(map[string]any)
+
+	if f.DeviceID != nil {
+		filterMap["device_id"] = f.DeviceID
+	}
+
+	if f.Status != nil {
+		filterMap["status"] = f.Status.String()
+	}
+
+	if f.DeviceErrorID != nil {
+		filterMap["device_error_id"] = f.DeviceErrorID
+	}
+
+	if f.IDs != nil && len(f.IDs) > 0 {
+		filterMap["id"] = f.IDs
 	}
 
 	return filterMap

@@ -15,15 +15,28 @@ type DeviceDeviceErrorRepository interface {
 	List(ctx context.Context, f DeviceErrorListFilter) (DeviceErrorListResponse, error)
 }
 
-type Device struct {
-	repo            DeviceRepository
-	deviceErrorRepo DeviceDeviceErrorRepository
+type DeviceTroubleshootingStepsRepository interface {
+	BulkCreate(ctx context.Context, req TroubleshootingBulkCreateRequest) error
+	List(ctx context.Context, req TroubleshootingStepListFilter) (TroubleshootingStepListResponse, error)
+	Get(ctx context.Context, f TroubleshootingStepGetFilter) (TroubleshootingStepEntity, error)
+	UpdateHints(ctx context.Context, id uint, hints map[string]any) error
 }
 
-func NewDevice(repo DeviceRepository, deviceErrorRepo DeviceDeviceErrorRepository) *Device {
+type Device struct {
+	repo                    DeviceRepository
+	deviceErrorRepo         DeviceDeviceErrorRepository
+	troubleshootingStepRepo DeviceTroubleshootingStepsRepository
+}
+
+func NewDevice(
+	repo DeviceRepository,
+	deviceErrorRepo DeviceDeviceErrorRepository,
+	troubleshootingStepRepo DeviceTroubleshootingStepsRepository,
+) *Device {
 	return &Device{
-		repo:            repo,
-		deviceErrorRepo: deviceErrorRepo,
+		repo:                    repo,
+		deviceErrorRepo:         deviceErrorRepo,
+		troubleshootingStepRepo: troubleshootingStepRepo,
 	}
 }
 
@@ -45,4 +58,16 @@ func (s *Device) BulkCreateDeviceErrors(ctx context.Context, req DeviceErrorBulk
 
 func (s *Device) ListDeviceErrors(ctx context.Context, f DeviceErrorListFilter) (DeviceErrorListResponse, error) {
 	return s.deviceErrorRepo.List(ctx, f)
+}
+
+func (s *Device) BulkCreateTroubleshootingSteps(ctx context.Context, req TroubleshootingBulkCreateRequest) error {
+	return s.troubleshootingStepRepo.BulkCreate(ctx, req)
+}
+
+func (s *Device) GetTroubleshootingStep(ctx context.Context, f TroubleshootingStepGetFilter) (TroubleshootingStepEntity, error) {
+	return s.troubleshootingStepRepo.Get(ctx, f)
+}
+
+func (s *Device) ListTroubleshootingSteps(ctx context.Context, f TroubleshootingStepListFilter) (TroubleshootingStepListResponse, error) {
+	return s.troubleshootingStepRepo.List(ctx, f)
 }

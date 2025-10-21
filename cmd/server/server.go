@@ -42,10 +42,11 @@ func Run(cfg *conf.AppConfig) error {
 	userRepo := repository.NewUserRepository(gormWrapper)
 	deviceRepo := repository.NewDevice(gormWrapper)
 	deviceErrorRepo := repository.NewDeviceError(gormWrapper)
+	troubleshootingRepo := repository.NewTroubleshootingSteps(gormWrapper)
 
 	userSvc := service.NewUserService(userRepo)
 	authSvc := service.NewAuth(userSvc, userRepo)
-	deviceSvc := service.NewDevice(deviceRepo, deviceErrorRepo)
+	deviceSvc := service.NewDevice(deviceRepo, deviceErrorRepo, troubleshootingRepo)
 
 	authController := controller.NewAuth(
 		authSvc,
