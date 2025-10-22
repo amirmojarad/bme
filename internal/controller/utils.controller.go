@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"bme/internal/service"
 	"bme/pkg/errorext"
 	"bme/pkg/utils"
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,18 @@ type HeaderEntity struct {
 
 type HeaderEntityBindingRequired struct {
 	UserID uint `header:"X-Auth-User-ID" binding:"required"`
+}
+
+type PaginationRequest struct {
+	CurrentPage int `form:"current_page"`
+	PerPage     int `form:"per_page"`
+}
+
+type PaginationMeta struct {
+	CurrentPage int `json:"current_page"`
+	PerPage     int `json:"per_page"`
+	Total       int `json:"total"`
+	TotalPages  int `json:"total_pages"`
 }
 
 func writeValidationErrors(ctx *gin.Context, validationError *utils.ValidationError) {
@@ -74,4 +87,23 @@ func qAs(q *string) (idStartsWith *string, titleStartsWith *string) {
 	}
 
 	return idStartsWith, titleStartsWith
+}
+
+func toViewPaginationMetaFromSvc(meta service.PaginationMeta) PaginationMeta {
+	return PaginationMeta(meta)
+}
+
+func (req PaginationRequest) isEmpty() bool {
+	return req.CurrentPage == 0 && req.PerPage == 0
+}
+
+func (req PaginationRequest) toSvc() *service.PaginationRequest {
+	if req.isEmpty() {
+		return service.NewPaginationRequest(service.DefaultCurrentPage, service.DefaultPerPage)
+	}
+
+	return &service.PaginationRequest{
+		CurrentPage: req.CurrentPage,
+		PerPage:     req.PerPage,
+	}
 }

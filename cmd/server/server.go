@@ -44,16 +44,16 @@ func Run(cfg *conf.AppConfig) error {
 	deviceErrorRepo := repository.NewDeviceError(gormWrapper)
 	troubleshootingRepo := repository.NewTroubleshootingSteps(gormWrapper)
 	troubleshootingStepsToStepsRepo := repository.NewTroubleshootingStepsToSteps(gormWrapper)
+	userTroubleshootingSessionsRepo := repository.NewUserTroubleshootingSessions(gormWrapper)
+	userTroubleshootingJourney := repository.NewUserTroubleshootingJourney(gormWrapper)
 
 	userSvc := service.NewUserService(userRepo)
 	authSvc := service.NewAuth(userRepo)
 	deviceSvc := service.NewDevice(deviceRepo, deviceErrorRepo, troubleshootingRepo, troubleshootingStepsToStepsRepo)
+	userTroubleshootingSvc := service.NewUserTroubleshooting(userTroubleshootingSessionsRepo, userTroubleshootingJourney)
 
-	authController := controller.NewAuth(
-		authSvc,
-		logger.GetLogger().WithField("name", "auth-controller"),
-		bmsJwt,
-	)
+	authController := controller.NewAuth(authSvc, logger.GetLogger().WithField("name", "auth-controller"), bmsJwt)
+	userTroubleshootingCtrl := controller.NewUserTroubleshooting(userTroubleshootingSvc, logger.GetLogger().WithField("name", "user-troubleshooting"))
 	userCtrl := controller.NewUser(userSvc, logger.GetLogger().WithField("name", "user-controller"))
 
 	deviceCtrl := controller.NewDevice(deviceSvc, logger.GetLogger().WithField("name", "device-controller"))
@@ -67,10 +67,12 @@ func Run(cfg *conf.AppConfig) error {
 	authGroup := v1Group.Group("/auth")
 	deviceGroup := v1Group.Group("/device", authMiddleware.Authorize)
 	userGroup := v1Group.Group("/user", authMiddleware.Authorize)
+	userTroubleshootingGroup := userGroup.Group("/troubleshooting")
 
 	controller.SetupAuthRoutes(authGroup, authController)
 	controller.SetupDeviceRoutes(deviceGroup, deviceCtrl)
 	controller.SetUserRoutes(userGroup, userCtrl)
+	controller.SetupUserTroubleshootingRoutes(userTroubleshootingGroup, userTroubleshootingCtrl)
 
 	return ginEngine.Run(fmt.Sprintf(":%d", cfg.App.Port))
 }

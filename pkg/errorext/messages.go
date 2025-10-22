@@ -54,4 +54,10 @@ var ErrorMessages = map[ErrorKey]ErrorMessage{
 		En: "invalid password",
 		Fa: "رمز عبور فعلی اشتباه است",
 	},
+	ErrUserHasActiveSessionAlready: {
+		En: "user has active session",
+	},
+	ErrSessionIsAlreadyDone: {
+		En: "session is already done",
+	},
 }
