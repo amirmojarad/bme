@@ -1,10 +1,18 @@
 package controller
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 func SetupAuthRoutes(router gin.IRoutes, ctrl Auth) {
 	router.POST("/register", ctrl.Register)
 	router.POST("/login", ctrl.Login)
+}
+
+func SetUserRoutes(router gin.IRoutes, userCtrl *User) {
+	router.PATCH("/reset-password", userCtrl.ResetPassword)
+	router.PUT("", userCtrl.Update)
+	router.GET("", userCtrl.Get)
 }
 
 func SetupDeviceRoutes(router gin.IRoutes, ctrl *Device) {

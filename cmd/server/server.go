@@ -46,7 +46,7 @@ func Run(cfg *conf.AppConfig) error {
 	troubleshootingStepsToStepsRepo := repository.NewTroubleshootingStepsToSteps(gormWrapper)
 
 	userSvc := service.NewUserService(userRepo)
-	authSvc := service.NewAuth(userSvc, userRepo)
+	authSvc := service.NewAuth(userRepo)
 	deviceSvc := service.NewDevice(deviceRepo, deviceErrorRepo, troubleshootingRepo, troubleshootingStepsToStepsRepo)
 
 	authController := controller.NewAuth(
@@ -54,6 +54,7 @@ func Run(cfg *conf.AppConfig) error {
 		logger.GetLogger().WithField("name", "auth-controller"),
 		bmsJwt,
 	)
+	userCtrl := controller.NewUser(userSvc, logger.GetLogger().WithField("name", "user-controller"))
 
 	deviceCtrl := controller.NewDevice(deviceSvc, logger.GetLogger().WithField("name", "device-controller"))
 
@@ -65,9 +66,11 @@ func Run(cfg *conf.AppConfig) error {
 	v1Group := ginEngine.Group("/v1")
 	authGroup := v1Group.Group("/auth")
 	deviceGroup := v1Group.Group("/device", authMiddleware.Authorize)
+	userGroup := v1Group.Group("/user", authMiddleware.Authorize)
 
 	controller.SetupAuthRoutes(authGroup, authController)
 	controller.SetupDeviceRoutes(deviceGroup, deviceCtrl)
+	controller.SetUserRoutes(userGroup, userCtrl)
 
 	return ginEngine.Run(fmt.Sprintf(":%d", cfg.App.Port))
 }

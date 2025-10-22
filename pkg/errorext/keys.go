@@ -22,6 +22,7 @@ var (
 	ErrGormOpen             ErrorKey = "gorm_open_error"
 	ErrValidation           ErrorKey = "validation_error"
 	ErrNotFound             ErrorKey = "not_found_error"
+	ErrIncorrectPassword    ErrorKey = "incorrect_password_error"
 	EnvValueIsEmpty         ErrorKey = "env_value_is_empty"
 	ErrFailedGenerateToken  ErrorKey = "failed_generate_token_error"
 	ErrNotImplemented       ErrorKey = "not_implemented_error"

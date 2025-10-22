@@ -42,3 +42,7 @@ func (r User) First(ctx context.Context, f service.FirstUserFilter) (service.Use
 
 	return user.toSvc(), nil
 }
+
+func (r User) Update(ctx context.Context, req service.UserUpdateRequest) error {
+	return errors.WithStack(r.DB(ctx).Model(&UserEntity{}).Where(req.FilterMap()).Updates(req.UpdatesMap()).Debug().Error)
+}

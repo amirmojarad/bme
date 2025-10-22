@@ -53,6 +53,21 @@ type AuthUserWithRoleEntity struct {
 	Role   constants.UserRole `json:"role"`
 }
 
+type UserResetPasswordRequest struct {
+	RequestedBy     uint
+	CurrentPassword string
+	NewPassword     string
+}
+
+type UserUpdateRequest struct {
+	RequestedBy    uint
+	PhoneNumber    *string
+	FirstName      *string
+	LastName       *string
+	Username       *string
+	HashedPassword *string
+}
+
 func (f FirstUserFilter) FilterMap() map[string]any {
 	filterMap := make(map[string]any)
 
@@ -133,4 +148,36 @@ func (entity *AuthUserWithRoleEntity) createFromBytes(data []byte) error {
 
 func (entity *AuthUserWithRoleEntity) IsAdmin() bool {
 	return entity.Role == constants.UserRoleAdmin
+}
+
+func (req UserUpdateRequest) FilterMap() map[string]any {
+	return map[string]any{
+		"id": req.RequestedBy,
+	}
+}
+
+func (req UserUpdateRequest) UpdatesMap() map[string]any {
+	updateMap := make(map[string]any)
+
+	if req.FirstName != nil {
+		updateMap["first_name"] = req.FirstName
+	}
+
+	if req.LastName != nil {
+		updateMap["last_name"] = req.LastName
+	}
+
+	if req.PhoneNumber != nil {
+		updateMap["phone_number"] = req.PhoneNumber
+	}
+
+	if req.Username != nil {
+		updateMap["username"] = req.Username
+	}
+
+	if req.HashedPassword != nil {
+		updateMap["hashed_password"] = req.HashedPassword
+	}
+
+	return updateMap
 }

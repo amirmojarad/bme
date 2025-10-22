@@ -2,39 +2,64 @@ package controller
 
 import (
 	"bme/internal/service"
-	"bme/pkg/jwt"
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
 )
 
-type AuthService interface {
-	Register(ctx context.Context, req service.AuthRegisterRequest) (service.UserEntity, error)
-	Login(ctx context.Context, req service.AuthLoginRequest) (service.UserEntity, error)
+type UserService interface {
+	ResetPassword(ctx context.Context, req service.UserResetPasswordRequest) error
+	Update(ctx context.Context, req service.UserUpdateRequest) error
+	First(ctx context.Context, f service.FirstUserFilter) (service.UserEntity, error)
 }
 
-type Jwt interface {
-	GenerateTokens(claims jwt.UserClaims) (jwt.Tokens, error)
-	ValidateToken(tokenString string, secret []byte) (*jwt.UserClaims, error)
-}
-
-type Auth struct {
-	svc    AuthService
-	jwt    Jwt
+type User struct {
+	svc    UserService
 	logger *logrus.Entry
 }
 
-func NewAuth(svc AuthService, logger *logrus.Entry, zeusJwt jwt.ZeusJwt) Auth {
-	return Auth{
+func NewUser(svc UserService, logger *logrus.Entry) *User {
+	return &User{
 		svc:    svc,
 		logger: logger,
-		jwt:    zeusJwt,
 	}
 }
 
-func (c Auth) Register(ctx *gin.Context) {
-	var req UserRegisterRequest
+func (c *User) ResetPassword(ctx *gin.Context) {
+	var (
+		req    UserResetPasswordRequest
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBadRequestErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBadRequestErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.RequestedBy = header.UserID
+
+	if err := c.svc.ResetPassword(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c *User) Update(ctx *gin.Context) {
+	var (
+		req    UserUpdateRequest
+		header HeaderEntityBindingRequired
+	)
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		writeBindingErrorResponse(ctx, err)
@@ -42,71 +67,41 @@ func (c Auth) Register(ctx *gin.Context) {
 		return
 	}
 
-	validationErr, err := req.validate()
-	if err != nil {
+	if err := ctx.ShouldBindHeader(&header); err != nil {
 		writeBindingErrorResponse(ctx, err)
 
 		return
 	}
 
-	if validationErr != nil {
-		writeValidationErrors(ctx, validationErr)
+	req.RequestedBy = header.UserID
 
-		return
-	}
-
-	newUser, err := c.svc.Register(ctx, req.toSvc())
-	if err != nil {
+	if err := c.svc.Update(ctx, req.toSvc()); err != nil {
 		writeErrorResponse(ctx, err, c.logger)
 
 		return
 	}
 
-	tokens, err := c.jwt.GenerateTokens(newUser.UserClaims())
-	if err != nil {
-		writeErrorResponse(ctx, err, c.logger)
-
-		return
-	}
-
-	ctx.JSON(http.StatusOK, tokensFromJwtTokens(tokens))
+	ctx.JSON(http.StatusOK, gin.H{})
 }
 
-func (c Auth) Login(ctx *gin.Context) {
-	var req UserLoginRequest
+func (c *User) Get(ctx *gin.Context) {
+	var (
+		header HeaderEntityBindingRequired
+	)
 
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBindHeader(&header); err != nil {
 		writeBindingErrorResponse(ctx, err)
 
 		return
 	}
 
-	validationErr, err := req.validate()
+	resp, err := c.svc.First(ctx, service.FirstUserFilter{ID: &header.UserID})
 	if err != nil {
 		writeErrorResponse(ctx, err, c.logger)
 
 		return
 	}
 
-	if validationErr != nil {
-		writeValidationErrors(ctx, validationErr)
+	ctx.JSON(http.StatusOK, toViewUserResponse(resp))
 
-		return
-	}
-
-	svcResp, err := c.svc.Login(ctx, req.toSvc())
-	if err != nil {
-		writeErrorResponse(ctx, err, c.logger)
-
-		return
-	}
-
-	tokens, err := c.jwt.GenerateTokens(svcResp.UserClaims())
-	if err != nil {
-		writeErrorResponse(ctx, err, c.logger)
-
-		return
-	}
-
-	ctx.JSON(http.StatusOK, tokensFromJwtTokens(tokens))
 }

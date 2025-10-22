@@ -35,5 +35,6 @@ func (entity UserEntity) toSvc() service.UserEntity {
 		FirstName:      entity.FirstName,
 		LastName:       entity.LastName,
 		HashedPassword: entity.HashedPassword,
+		PhoneNumber:    entity.PhoneNumber,
 	}
 }

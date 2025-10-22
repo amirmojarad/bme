@@ -50,4 +50,8 @@ var ErrorMessages = map[ErrorKey]ErrorMessage{
 		En: "unauthorized",
 		Fa: "خطای دسترسی",
 	},
+	ErrInvalidPassword: {
+		En: "invalid password",
+		Fa: "رمز عبور فعلی اشتباه است",
+	},
 }

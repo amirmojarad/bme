@@ -12,22 +12,15 @@ type AuthUserRepository interface {
 	First(ctx context.Context, req FirstUserFilter) (UserEntity, error)
 }
 
-type AuthUserService interface {
-	First(ctx context.Context, f FirstUserFilter) (UserEntity, error)
-}
-
 type Auth struct {
-	repo    AuthUserRepository
-	userSvc AuthUserService
+	repo AuthUserRepository
 }
 
 func NewAuth(
-	userSvc AuthUserService,
 	repo AuthUserRepository,
 ) Auth {
 	return Auth{
-		userSvc: userSvc,
-		repo:    repo,
+		repo: repo,
 	}
 }
 
