@@ -10,9 +10,13 @@ import (
 
 type UserTroubleshootingService interface {
 	UpdateStatus(ctx context.Context, req service.UserTroubleshootingUpdateStatusRequest) error
-	CreateSession(ctx context.Context, req service.UserTroubleshootingSessionCreateRequest) error
+	CreateSession(ctx context.Context, req service.UserTroubleshootingSessionCreateRequest) (service.UserTroubleshootingSessionWithDetailsEntity, error)
 	ListSessions(ctx context.Context, f service.UserTroubleshootingSessionListFilter) (service.UserTroubleshootingSessionsListWithDetailsResp, error)
 	CurrentActiveSession(ctx context.Context, req service.UserTroubleshootingCurrentActiveSessionReq) (service.UserTroubleshootingSessionWithDetailsEntity, error)
+	NextStep(ctx context.Context, req service.UserTroubleshootingNextStepRequest) error
+	DeclineSession(ctx context.Context, userID uint) error
+	DoneSession(ctx context.Context, userID uint) error
+	PrevStep(ctx context.Context, req service.UserTroubleshootingPrevStepRequest) error
 }
 
 type UserTroubleshooting struct {
@@ -47,13 +51,14 @@ func (c UserTroubleshooting) CreateSession(ctx *gin.Context) {
 
 	req.UserID = header.UserID
 
-	if err := c.svc.CreateSession(ctx, req.toSvc()); err != nil {
+	sessionID, err := c.svc.CreateSession(ctx, req.toSvc())
+	if err != nil {
 		writeErrorResponse(ctx, err, c.logger)
 
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{})
+	ctx.JSON(http.StatusCreated, gin.H{"session_id": sessionID})
 }
 
 func (c UserTroubleshooting) ListSessions(ctx *gin.Context) {
@@ -125,6 +130,46 @@ func (c UserTroubleshooting) UpdateStatus(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{})
 }
 
+func (c UserTroubleshooting) DeclineSession(ctx *gin.Context) {
+	var (
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := c.svc.DeclineSession(ctx, header.UserID); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c UserTroubleshooting) DoneSession(ctx *gin.Context) {
+	var (
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := c.svc.DoneSession(ctx, header.UserID); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
 func (c UserTroubleshooting) CurrentActiveSession(ctx *gin.Context) {
 	var (
 		header HeaderEntityBindingRequired
@@ -144,4 +189,62 @@ func (c UserTroubleshooting) CurrentActiveSession(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, toViewUserTroubleshootingSessionWithDetailsEntityFromSvc(resp))
+}
+
+func (c UserTroubleshooting) NextStep(ctx *gin.Context) {
+	var (
+		header HeaderEntityBindingRequired
+		req    UserTroubleshootingNextStepRequest
+	)
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.UserID = header.UserID
+
+	if err := c.svc.NextStep(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c UserTroubleshooting) PrevStep(ctx *gin.Context) {
+	var (
+		header HeaderEntityBindingRequired
+		req    UserTroubleshootingPrevStepRequest
+	)
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.UserID = header.UserID
+
+	if err := c.svc.PrevStep(ctx, req.toSvc()); err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{})
 }

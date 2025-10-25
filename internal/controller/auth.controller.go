@@ -11,7 +11,7 @@ import (
 
 type AuthService interface {
 	Register(ctx context.Context, req service.AuthRegisterRequest) (service.UserEntity, error)
-	Login(ctx context.Context, req service.AuthLoginRequest) (service.UserEntity, error)
+	Login(ctx context.Context, req service.AuthLoginRequest) (service.AuthLoginResponse, error)
 }
 
 type Jwt interface {
@@ -101,7 +101,7 @@ func (c Auth) Login(ctx *gin.Context) {
 		return
 	}
 
-	tokens, err := c.jwt.GenerateTokens(svcResp.UserClaims())
+	tokens, err := c.jwt.GenerateTokens(svcResp.JwtClaims())
 	if err != nil {
 		writeErrorResponse(ctx, err, c.logger)
 

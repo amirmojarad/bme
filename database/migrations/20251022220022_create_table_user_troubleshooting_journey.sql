@@ -8,10 +8,10 @@ create table if not exists user_troubleshooting_journey
     description                     text        default null,
     created_at                      timestamptz default now(),
 
-    constraint fk_user_troubleshooting_journey_to_user_ts_sess foreign key (user_troubleshooting_session_id) references users (id),
-    constraint fk_user_troubleshooting_journey_to_to_ts_step foreign key (to_troubleshooting_step_id) references devices (id),
-    constraint fk_user_troubleshooting_journey_to_from_user_ts_step foreign key (from_troubleshooting_step_id) references device_errors (id)
-);
+    constraint fk_user_troubleshooting_journey_to_user_ts_sess foreign key (user_troubleshooting_session_id) references user_troubleshooting_sessions (id),
+    constraint fk_user_troubleshooting_journey_to_to_ts_step foreign key (to_troubleshooting_step_id) references troubleshooting_steps (id),
+    constraint fk_user_troubleshooting_journey_to_from_ts_step foreign key (from_troubleshooting_step_id) references troubleshooting_steps (id)
+    );
 
 -- +goose StatementBegin
 SELECT 'up SQL query';

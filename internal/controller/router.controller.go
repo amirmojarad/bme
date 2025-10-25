@@ -32,6 +32,9 @@ func SetupDeviceRoutes(router gin.IRoutes, ctrl *Device) {
 func SetupUserTroubleshootingRoutes(router gin.IRoutes, ctrl *UserTroubleshooting) {
 	router.POST("", ctrl.CreateSession)
 	router.GET("", ctrl.ListSessions)
-	router.PATCH("/:id", ctrl.UpdateStatus)
-	router.GET("/current-active-session", ctrl.CurrentActiveSession)
+	router.PATCH("/decline", ctrl.DeclineSession)
+	router.PATCH("/done", ctrl.DoneSession)
+	router.GET("/session", ctrl.CurrentActiveSession)
+	router.POST("/session/steps/next", ctrl.NextStep)
+	router.POST("/session/steps/prev", ctrl.PrevStep)
 }

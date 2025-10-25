@@ -15,7 +15,7 @@ func NewTroubleshootingStepsToSteps(db *database.GormWrapper) *TroubleshootingSt
 	return &TroubleshootingStepsToSteps{db}
 }
 
-func (r TroubleshootingStepsToSteps) BulkCreate(ctx context.Context, req service.TroubleshootingStepsToStepsCreateReq) error {
+func (r *TroubleshootingStepsToSteps) BulkCreate(ctx context.Context, req service.TroubleshootingStepsToStepsCreateReq) error {
 	entities := troubleshootingStepsToStepsEntitiesFromSvcReq(req)
 
 	return errors.WithStack(r.DB(ctx).Create(&entities).Error)

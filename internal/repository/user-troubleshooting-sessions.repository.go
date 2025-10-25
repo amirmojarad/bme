@@ -23,18 +23,18 @@ func NewUserTroubleshootingSessions(db *database.GormWrapper) *UserTroubleshooti
 func (r UserTroubleshootingSessions) Create(
 	ctx context.Context,
 	req service.UserTroubleshootingSessionCreateRequest,
-) error {
+) (uint, error) {
 	entity := userTroubleshootingSessionEntityFromSvcReq(req)
 
 	if err := r.DB(ctx).Create(&entity).Error; err != nil {
 		if strings.Contains(err.Error(), "duplicate") {
-			return errorext.NewValidation(err, errorext.ErrUserHasActiveSessionAlready)
+			return 0, errorext.NewValidation(err, errorext.ErrUserHasActiveSessionAlready)
 		}
 
-		return err
+		return 0, err
 	}
 
-	return nil
+	return entity.ID, nil
 }
 
 func (r UserTroubleshootingSessions) ListWithDetails(
@@ -98,7 +98,13 @@ func (r UserTroubleshootingSessions) First(ctx context.Context, f service.UserTr
 func (r UserTroubleshootingSessions) FirstWithDetails(ctx context.Context, f service.UserTroubleshootingSessionGetFilter) (service.UserTroubleshootingSessionWithDetailsEntity, error) {
 	var entity UserTroubleshootingSessionEntity
 
-	if err := r.DB(ctx).Model(&UserTroubleshootingSessionEntity{}).Where(f.FilterMap()).First(&entity).Error; err != nil {
+	if err := r.DB(ctx).
+		Model(&UserTroubleshootingSessionEntity{}).
+		Where(f.FilterMap()).
+		Preload("Device").
+		Preload("DeviceError").
+		Preload("CurrentTroubleshootingStep").
+		First(&entity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return service.UserTroubleshootingSessionWithDetailsEntity{}, errorext.NewNotFound(err, errorext.ErrNotFound)
 		}
@@ -107,4 +113,55 @@ func (r UserTroubleshootingSessions) FirstWithDetails(ctx context.Context, f ser
 	}
 
 	return entity.toSvcWithDetails(), nil
+}
+
+func (r UserTroubleshootingSessions) StepsMap(ctx context.Context, f service.UserTroubleshootingSessionListFilter) (service.TroubleshootingNextStepsMap, error) {
+	transitions := make(TroubleshootingStepTransitions, 0)
+
+	err := r.DB(ctx).
+		Select(`
+        ss.from_step_id,
+        ts.title AS title,
+        ss.to_step_id,
+        to_ts.title AS to_title`).
+		Table("troubleshooting_steps ts").
+		Joins("JOIN troubleshooting_steps_to_steps ss ON ts.id = ss.from_step_id").
+		Joins("JOIN troubleshooting_steps to_ts ON to_ts.id = ss.to_step_id").
+		Where("ts.device_id = ?", f.DeviceID).
+		Where("ts.device_error_id = ?", f.DeviceErrorID).Debug().
+		Scan(&transitions).Error
+
+	if err != nil {
+		return service.TroubleshootingNextStepsMap{}, errors.WithStack(err)
+	}
+
+	return transitions.toSvcTroubleshootingStepsMap(), nil
+}
+
+func (r UserTroubleshootingSessions) PrevSteps(ctx context.Context, f service.UserTroubleshootingSessionListFilter) (service.TroubleshootingNextStepsMap, error) {
+	transitions := make(TroubleshootingStepPrevStepsEntities, 0)
+
+	err := r.DB(ctx).
+		Select(`
+        tsts.to_step_id, to_step.title as to_step_title, tsts.from_step_id, from_step.title as from_step_title`).
+		Table("troubleshooting_steps ts").
+		Joins("join public.troubleshooting_steps_to_steps tsts on ts.id = tsts.to_step_id").
+		Joins("join troubleshooting_steps from_step on from_step.id = tsts.from_step_id").
+		Joins("join troubleshooting_steps to_step on to_step.id = tsts.to_step_id").
+		Where("ts.device_id = ?", f.DeviceID).
+		Where("ts.device_error_id = ?", f.DeviceErrorID).Debug().
+		Scan(&transitions).Error
+
+	if err != nil {
+		return service.TroubleshootingNextStepsMap{}, errors.WithStack(err)
+	}
+
+	return transitions.toSvcTroubleshootingStepsMap(), nil
+}
+
+func (r UserTroubleshootingSessions) UpdateCurrentStepID(ctx context.Context, id uint, currentStepID uint) error {
+	return errors.WithStack(r.DB(ctx).
+		Model(UserTroubleshootingSessionEntity{}).
+		Where("id = ?", id).
+		Update("current_troubleshooting_step_id", currentStepID).Error)
 }

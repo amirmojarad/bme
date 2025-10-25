@@ -39,6 +39,7 @@ func Run(cfg *conf.AppConfig) error {
 		logger.GetLogger().Fatal(err)
 	}
 
+	txRepo := repository.NewTransactional(gormWrapper)
 	userRepo := repository.NewUserRepository(gormWrapper)
 	deviceRepo := repository.NewDevice(gormWrapper)
 	deviceErrorRepo := repository.NewDeviceError(gormWrapper)
@@ -48,9 +49,9 @@ func Run(cfg *conf.AppConfig) error {
 	userTroubleshootingJourney := repository.NewUserTroubleshootingJourney(gormWrapper)
 
 	userSvc := service.NewUserService(userRepo)
-	authSvc := service.NewAuth(userRepo)
+	authSvc := service.NewAuth(userRepo, userTroubleshootingSessionsRepo)
 	deviceSvc := service.NewDevice(deviceRepo, deviceErrorRepo, troubleshootingRepo, troubleshootingStepsToStepsRepo)
-	userTroubleshootingSvc := service.NewUserTroubleshooting(userTroubleshootingSessionsRepo, userTroubleshootingJourney)
+	userTroubleshootingSvc := service.NewUserTroubleshooting(userTroubleshootingSessionsRepo, userTroubleshootingJourney, troubleshootingRepo, txRepo)
 
 	authController := controller.NewAuth(authSvc, logger.GetLogger().WithField("name", "auth-controller"), bmsJwt)
 	userTroubleshootingCtrl := controller.NewUserTroubleshooting(userTroubleshootingSvc, logger.GetLogger().WithField("name", "user-troubleshooting"))

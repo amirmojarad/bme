@@ -15,6 +15,8 @@ type (
 	TroubleshootingStepsToStepsCreateEntities      []TroubleshootingStepsToStepsCreateEntity
 	TroubleshootingStepNextStepEntities            []TroubleshootingStepNextStepEntity
 	TroubleshootingStepsToStepsWithDetailsEntities []TroubleshootingStepsToStepsWithDetailsEntity
+	TroubleshootingStepTitleAndIDEntities          []TroubleshootingStepTitleAndIDEntity
+	TroubleshootingStepPrevStepsEntities           []TroubleshootingStepPrevStepsEntity
 )
 
 type DeviceEntity struct {
@@ -105,6 +107,11 @@ type TroubleshootingStepEntity struct {
 	DeletedAt     *time.Time
 }
 
+type TroubleshootingStepTitleAndIDEntity struct {
+	ID    uint
+	Title string
+}
+
 type TroubleShootingStepCreateEntity struct {
 	DeviceID      uint
 	DeviceErrorID uint
@@ -138,6 +145,7 @@ type TroubleshootingStepGetFilter struct {
 	DeviceErrorID *uint
 	ID            *uint
 	WithNextSteps bool
+	Sort          bool
 }
 
 type TroubleshootingStepsToStepsWithDetailsEntity struct {
@@ -193,6 +201,17 @@ type CreateTroubleshootingNextStepsReq struct {
 	ID            uint
 	NextSteps     TroubleshootingStepNextStepEntities
 	RequestedBy   uint
+}
+
+type TroubleshootingNextStepsMap struct {
+	Map map[uint]map[uint]string
+}
+
+type TroubleshootingStepPrevStepsEntity struct {
+	FromStepID    uint   `gorm:"column:to_step_id"`
+	FromStepTitle string `gorm:"column:to_step_title"`
+	ToStepID      uint   `gorm:"column:from_step_id"`
+	ToStepTitle   string `gorm:"column:from_step_title"`
 }
 
 func (f GetDeviceFilter) FilterMap() map[string]any {
@@ -286,4 +305,19 @@ func (req CreateTroubleshootingNextStepsReq) toTroubleshootingStepToStepsBulkCre
 		Entities:    entities,
 		RequestedBy: 0,
 	}
+}
+
+func (m TroubleshootingNextStepsMap) toTroubleshootingStepTitleAndIDEntities(stepID uint) TroubleshootingStepTitleAndIDEntities {
+	result := make(TroubleshootingStepTitleAndIDEntities, 0)
+
+	nextSteps := m.Map[stepID]
+
+	for id, title := range nextSteps {
+		result = append(result, TroubleshootingStepTitleAndIDEntity{
+			ID:    id,
+			Title: title,
+		})
+	}
+
+	return result
 }

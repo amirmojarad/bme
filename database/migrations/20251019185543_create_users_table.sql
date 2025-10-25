@@ -11,6 +11,9 @@ create table if not exists users
     updated_at      timestamptz  default now(),
     deleted_at      timestamptz  default null
 );
+
+create unique index uidx_user_username on users (username);
+create unique index uidx_phone_number on users (phone_number);
 -- +goose StatementBegin
 
 -- +goose StatementEnd

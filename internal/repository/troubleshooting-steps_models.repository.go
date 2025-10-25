@@ -21,6 +21,7 @@ type TroubleshootingStepEntity struct {
 	Description       string
 	Hints             map[string]any `gorm:"serializer:json"`
 	Status            string
+	Sort              uint
 	CreatedBy         uint
 	UpdatedBy         uint
 	DeletedBy         uint

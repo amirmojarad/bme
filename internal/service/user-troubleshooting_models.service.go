@@ -8,6 +8,7 @@ import (
 type (
 	UserTroubleshootingSessionEntities            []UserTroubleshootingSessionEntity
 	UserTroubleshootingSessionWithDetailsEntities []UserTroubleshootingSessionWithDetailsEntity
+	UserTroubleshootingJourneyEntities            []UserTroubleshootingJourneyEntity
 )
 type UserTroubleshootingSessionEntity struct {
 	ID            uint
@@ -23,23 +24,29 @@ type UserTroubleshootingSessionCreateRequest struct {
 	UserID        uint
 	DeviceID      uint
 	DeviceErrorID uint
+	StartStepID   *uint
 }
 
 type UserTroubleshootingSessionWithDetailsEntity struct {
-	ID               uint
-	UserID           uint
-	DeviceID         uint
-	DeviceTitle      string
-	DeviceErrorID    uint
-	DeviceErrorTitle string
-	Status           constants.UserTroubleshootingSessionsStatus
-	CreatedAt        time.Time
-	DeletedAt        *time.Time
+	ID                         uint
+	UserID                     uint
+	DeviceID                   uint
+	DeviceTitle                string
+	DeviceErrorID              uint
+	DeviceErrorTitle           string
+	Status                     constants.UserTroubleshootingSessionsStatus
+	CurrentStepID              *uint
+	CurrentTroubleshootingStep TroubleshootingStepEntity
+	NextSteps                  TroubleshootingStepTitleAndIDEntities
+	PrevStep                   TroubleshootingStepTitleAndIDEntities
+	CreatedAt                  time.Time
+	DeletedAt                  *time.Time
 }
 type UserTroubleshootingJourneyEntity struct {
 	ID                           uint
 	UserTroubleshootingSessionID uint
 	FromTroubleshootingStepID    uint
+	FromTroubleshootingStepTitle string
 	ToTroubleshootingStepID      uint
 	Description                  string
 	CreatedAt                    time.Time
@@ -73,6 +80,22 @@ type UserTroubleshootingSessionsListWithDetailsResp struct {
 
 type UserTroubleshootingCurrentActiveSessionReq struct {
 	UserID uint
+}
+
+type UserTroubleshootingNextStepRequest struct {
+	UserID     uint
+	NextStepID uint
+}
+
+type UserTroubleshootingPrevStepRequest struct {
+	UserID     uint
+	PrevStepID uint
+}
+
+type UserTroubleshootingJourneyCreateRequest struct {
+	SessionID                 uint
+	FromTroubleshootingStepID uint
+	ToTroubleshootingStepID   uint
 }
 
 func (f UserTroubleshootingSessionListFilter) FilterMap() map[string]any {

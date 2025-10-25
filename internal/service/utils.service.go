@@ -1,9 +1,15 @@
 package service
 
+import "context"
+
 const (
 	DefaultCurrentPage = 1
 	DefaultPerPage     = 10
 )
+
+type TransactionalRepository interface {
+	BeginTx(ctx context.Context, fn func(ctx context.Context) error) error
+}
 
 type PaginationRequest struct {
 	CurrentPage int

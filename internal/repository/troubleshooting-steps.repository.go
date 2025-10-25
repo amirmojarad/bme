@@ -54,6 +54,10 @@ func (r *TroubleshootingSteps) Get(ctx context.Context, f service.Troubleshootin
 		query.Preload("NextSteps").Preload("NextSteps.ToTroubleshootingStepEntity")
 	}
 
+	if f.Sort {
+		query.Order(f.Sort)
+	}
+
 	if err := query.Debug().First(&entity).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return service.TroubleshootingStepEntity{}, errorext.NewNotFound(err, errorext.ErrNotFound)
