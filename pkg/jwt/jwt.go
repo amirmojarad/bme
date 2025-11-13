@@ -89,3 +89,12 @@ func (z ZeusJwt) ValidateToken(tokenString string, secret []byte) (*UserClaims, 
 	}
 	return nil, fmt.Errorf("invalid token")
 }
+
+func (z ZeusJwt) RefreshTokens(refreshToken string) (Tokens, error) {
+	claims, err := z.ValidateToken(refreshToken, z.cfg.Jwt.RefreshSecret)
+	if err != nil {
+		return Tokens{}, errorext.New(err, errorext.ErrGeneralOccurrence)
+	}
+
+	return z.GenerateTokens(*claims)
+}

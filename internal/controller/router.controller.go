@@ -7,6 +7,7 @@ import (
 func SetupAuthRoutes(router gin.IRoutes, ctrl Auth) {
 	router.POST("/register", ctrl.Register)
 	router.POST("/login", ctrl.Login)
+	router.POST("/refresh", ctrl.Refresh)
 }
 
 func SetUserRoutes(router gin.IRoutes, userCtrl *User) {

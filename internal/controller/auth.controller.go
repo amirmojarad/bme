@@ -16,7 +16,7 @@ type AuthService interface {
 
 type Jwt interface {
 	GenerateTokens(claims jwt.UserClaims) (jwt.Tokens, error)
-	ValidateToken(tokenString string, secret []byte) (*jwt.UserClaims, error)
+	RefreshTokens(refreshToken string) (jwt.Tokens, error)
 }
 
 type Auth struct {
@@ -108,5 +108,24 @@ func (c Auth) Login(ctx *gin.Context) {
 		return
 	}
 
+	ctx.JSON(http.StatusOK, tokensFromJwtTokens(tokens))
+}
+
+func (c Auth) Refresh(ctx *gin.Context) {
+	var req RefreshTokenRequest
+
+	if err := ctx.ShouldBindHeader(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	tokens, err := c.jwt.RefreshTokens(req.RefreshToken)
+	if err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+	
 	ctx.JSON(http.StatusOK, tokensFromJwtTokens(tokens))
 }

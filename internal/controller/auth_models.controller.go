@@ -37,6 +37,10 @@ type UserRegisterRequest struct {
 	PhoneNumber string `json:"phone_number"`
 }
 
+type RefreshTokenRequest struct {
+	RefreshToken string `header:"refresh_token" binding:"required"`
+}
+
 func tokensFromJwtTokens(tokens jwt.Tokens) Tokens {
 	return Tokens{
 		AccessToken:  tokens.AccessToken,
