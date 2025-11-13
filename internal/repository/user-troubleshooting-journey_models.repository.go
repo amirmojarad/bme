@@ -16,6 +16,7 @@ type UserTroubleshootingJourneyEntity struct {
 	ToTroubleshootingStepID      uint
 	Description                  string
 	CreatedAt                    time.Time
+	FinishedAt                   *time.Time
 }
 
 func (UserTroubleshootingJourneyEntity) TableName() string {
@@ -39,6 +40,7 @@ func (entity UserTroubleshootingJourneyEntity) toSvc() service.UserTroubleshooti
 		Description:                  entity.Description,
 		CreatedAt:                    entity.CreatedAt,
 		FromTroubleshootingStepTitle: entity.FromTroubleshootingStep.Title,
+		FinishedAt:                   entity.FinishedAt,
 	}
 }
 

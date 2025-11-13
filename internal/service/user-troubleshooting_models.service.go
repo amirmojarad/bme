@@ -52,6 +52,7 @@ type UserTroubleshootingJourneyEntity struct {
 	ToTroubleshootingStepID      uint
 	Description                  string
 	CreatedAt                    time.Time
+	FinishedAt                   *time.Time
 }
 
 type UserTroubleshootingSessionListFilter struct {

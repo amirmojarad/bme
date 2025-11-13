@@ -26,6 +26,7 @@ type UserTroubleshootingSessionEntity struct {
 	CurrentTroubleshootingStep   TroubleshootingStepEntity `gorm:"foreignkey:CurrentTroubleshootingStepID; references:ID"`
 	CreatedAt                    time.Time
 	DeletedAt                    gorm.DeletedAt `gorm:"index"`
+	FinishedAt                   *time.Time
 }
 
 type TroubleshootingStepTransition struct {
@@ -83,6 +84,7 @@ func (entity UserTroubleshootingSessionEntity) toSvcWithDetails() service.UserTr
 		CreatedAt:                  entity.CreatedAt,
 		DeletedAt:                  &entity.DeletedAt.Time,
 		CurrentStepID:              entity.CurrentTroubleshootingStepID,
+		FinishedAt:                 entity.FinishedAt,
 	}
 
 }
