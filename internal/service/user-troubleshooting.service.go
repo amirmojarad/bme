@@ -16,12 +16,14 @@ type UserTroubleshootingSessionsRepository interface {
 	FirstWithDetails(ctx context.Context, f UserTroubleshootingSessionGetFilter) (UserTroubleshootingSessionWithDetailsEntity, error)
 	StepsMap(ctx context.Context, f UserTroubleshootingSessionListFilter) (TroubleshootingNextStepsMap, error)
 	PrevSteps(ctx context.Context, f UserTroubleshootingSessionListFilter) (TroubleshootingNextStepsMap, error)
+	Finish(ctx context.Context, id uint) error
 }
 
 type UserTroubleshootingJourneyRepository interface {
 	Create(ctx context.Context, req UserTroubleshootingJourneyCreateRequest) error
 	Latest(ctx context.Context, sessionID uint) (UserTroubleshootingJourneyEntity, error)
 	List(ctx context.Context, sessionID uint) (UserTroubleshootingJourneyEntities, error)
+	Finish(ctx context.Context, id uint) error
 }
 
 type UserTroubleshootingTroubleshootingStepsRepository interface {
@@ -102,11 +104,21 @@ func (s *UserTroubleshooting) UpdateStatus(ctx context.Context, req UserTroubles
 		return errorext.NewValidation(errors.New("session is already done"), errorext.ErrSessionIsAlreadyDone)
 	}
 
+	if session.FinishedAt != nil {
+		return errorext.NewValidation(errors.New("session is already finished"), errorext.ErrSessionIsAlreadyFinished)
+	}
+
 	if session.Status == req.NewStatus {
 		return nil
 	}
 
-	return s.userTroubleshootingSessionsRepo.UpdateStatus(ctx, req)
+	return s.txRepo.BeginTx(ctx, func(tx context.Context) error {
+		if err = s.userTroubleshootingSessionsRepo.UpdateStatus(ctx, req); err != nil {
+			return err
+		}
+
+		return s.userTroubleshootingSessionsRepo.Finish(ctx, session.ID)
+	})
 }
 
 func (s *UserTroubleshooting) CurrentActiveSession(ctx context.Context, req UserTroubleshootingCurrentActiveSessionReq) (UserTroubleshootingSessionWithDetailsEntity, error) {
@@ -206,6 +218,15 @@ func (s *UserTroubleshooting) NextStep(ctx context.Context, req UserTroubleshoot
 	}
 
 	return s.txRepo.BeginTx(ctx, func(tx context.Context) error {
+		latestStep, err := s.userTroubleshootingJourneyRepository.Latest(tx, session.ID)
+		if err != nil {
+			return err
+		}
+
+		if err = s.userTroubleshootingJourneyRepository.Finish(tx, latestStep.ID); err != nil {
+			return err
+		}
+
 		if err = s.userTroubleshootingJourneyRepository.Create(tx, UserTroubleshootingJourneyCreateRequest{
 			SessionID:                 session.ID,
 			FromTroubleshootingStepID: *session.CurrentStepID,
@@ -214,7 +235,7 @@ func (s *UserTroubleshooting) NextStep(ctx context.Context, req UserTroubleshoot
 			return err
 		}
 
-		return s.userTroubleshootingSessionsRepo.UpdateCurrentStepID(ctx, session.ID, req.NextStepID)
+		return s.userTroubleshootingSessionsRepo.UpdateCurrentStepID(tx, session.ID, req.NextStepID)
 	})
 }
 

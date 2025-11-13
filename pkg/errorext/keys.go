@@ -30,4 +30,5 @@ var (
 	ErrUnAuthorized                ErrorKey = "authorization_error"
 	ErrUserHasActiveSessionAlready ErrorKey = "user_has_active_session_already"
 	ErrSessionIsAlreadyDone        ErrorKey = "session_is_already_done"
+	ErrSessionIsAlreadyFinished    ErrorKey = "session_is_already_finished"
 )

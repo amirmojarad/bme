@@ -18,6 +18,7 @@ type UserTroubleshootingSessionEntity struct {
 	Status        constants.UserTroubleshootingSessionsStatus
 	CreatedAt     time.Time
 	DeletedAt     *time.Time
+	FinishedAt    *time.Time
 }
 
 type UserTroubleshootingSessionCreateRequest struct {
@@ -41,6 +42,7 @@ type UserTroubleshootingSessionWithDetailsEntity struct {
 	PrevStep                   TroubleshootingStepTitleAndIDEntities
 	CreatedAt                  time.Time
 	DeletedAt                  *time.Time
+	FinishedAt                 *time.Time
 }
 type UserTroubleshootingJourneyEntity struct {
 	ID                           uint

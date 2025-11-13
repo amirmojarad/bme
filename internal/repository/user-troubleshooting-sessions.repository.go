@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
 	"strings"
+	"time"
 )
 
 type UserTroubleshootingSessions struct {
@@ -164,4 +165,8 @@ func (r UserTroubleshootingSessions) UpdateCurrentStepID(ctx context.Context, id
 		Model(UserTroubleshootingSessionEntity{}).
 		Where("id = ?", id).
 		Update("current_troubleshooting_step_id", currentStepID).Error)
+}
+
+func (r UserTroubleshootingSessions) Finish(ctx context.Context, id uint) error {
+	return errors.WithStack(r.DB(ctx).Model(&UserTroubleshootingSessionEntity{}).Where("id = ?", id).Update("finished_at", time.Now()).Error)
 }

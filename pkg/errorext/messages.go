@@ -60,4 +60,7 @@ var ErrorMessages = map[ErrorKey]ErrorMessage{
 	ErrSessionIsAlreadyDone: {
 		En: "session is already done",
 	},
+	ErrSessionIsAlreadyFinished: {
+		En: "session is already finished",
+	},
 }

@@ -6,6 +6,7 @@ import (
 	"context"
 	"github.com/pkg/errors"
 	"gorm.io/gorm"
+	"time"
 )
 
 type UserTroubleshootingJourney struct {
@@ -51,4 +52,8 @@ func (r *UserTroubleshootingJourney) List(ctx context.Context, sessionID uint) (
 	}
 
 	return entities.toSvc(), nil
+}
+
+func (r *UserTroubleshootingJourney) Finish(ctx context.Context, id uint) error {
+	return errors.WithStack(r.DB(ctx).Model(&UserTroubleshootingJourneyEntity{}).Where("id = ?", id).Update("finished_at", time.Now()).Error)
 }
