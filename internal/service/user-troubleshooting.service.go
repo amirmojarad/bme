@@ -245,11 +245,23 @@ func (s *UserTroubleshooting) DeclineSession(ctx context.Context, userID uint) e
 		return err
 	}
 
-	return s.UpdateStatus(ctx, UserTroubleshootingUpdateStatusRequest{
-		ID:          currentActiveSession.ID,
-		RequestedBy: userID,
-		NewStatus:   constants.UserTroubleshootingSessionDeclined,
+	return s.txRepo.BeginTx(ctx, func(tx context.Context) error {
+		latestStep, err := s.userTroubleshootingJourneyRepository.Latest(tx, currentActiveSession.ID)
+		if err != nil {
+			return err
+		}
+
+		if err = s.userTroubleshootingJourneyRepository.Finish(tx, latestStep.ID); err != nil {
+			return err
+		}
+
+		return s.UpdateStatus(tx, UserTroubleshootingUpdateStatusRequest{
+			ID:          currentActiveSession.ID,
+			RequestedBy: userID,
+			NewStatus:   constants.UserTroubleshootingSessionDeclined,
+		})
 	})
+
 }
 
 func (s *UserTroubleshooting) DoneSession(ctx context.Context, userID uint) error {
@@ -258,10 +270,21 @@ func (s *UserTroubleshooting) DoneSession(ctx context.Context, userID uint) erro
 		return err
 	}
 
-	return s.UpdateStatus(ctx, UserTroubleshootingUpdateStatusRequest{
-		ID:          currentActiveSession.ID,
-		RequestedBy: userID,
-		NewStatus:   constants.UserTroubleshootingSessionDone,
+	return s.txRepo.BeginTx(ctx, func(tx context.Context) error {
+		latestStep, err := s.userTroubleshootingJourneyRepository.Latest(tx, currentActiveSession.ID)
+		if err != nil {
+			return err
+		}
+
+		if err = s.userTroubleshootingJourneyRepository.Finish(tx, latestStep.ID); err != nil {
+			return err
+		}
+
+		return s.UpdateStatus(ctx, UserTroubleshootingUpdateStatusRequest{
+			ID:          currentActiveSession.ID,
+			RequestedBy: userID,
+			NewStatus:   constants.UserTroubleshootingSessionDone,
+		})
 	})
 }
 
@@ -304,4 +327,24 @@ func (s *UserTroubleshooting) PrevStep(ctx context.Context, req UserTroubleshoot
 
 		return s.userTroubleshootingSessionsRepo.UpdateCurrentStepID(ctx, session.ID, req.PrevStepID)
 	})
+}
+
+func (s *UserTroubleshooting) SessionByID(ctx context.Context, req SessionByIdFilter) (SessionByIdResponse, error) {
+	session, err := s.userTroubleshootingSessionsRepo.FirstWithDetails(ctx, UserTroubleshootingSessionGetFilter{
+		ID:     &req.SessionID,
+		UserID: &req.UserID,
+	})
+	if err != nil {
+		return SessionByIdResponse{}, err
+	}
+
+	steps, err := s.userTroubleshootingJourneyRepository.List(ctx, session.ID)
+	if err != nil {
+		return SessionByIdResponse{}, err
+	}
+
+	return SessionByIdResponse{
+		UserTroubleshootingSessionWithDetailsEntity: session,
+		Steps: steps.toSessionStepEntities(),
+	}, nil
 }

@@ -9,6 +9,7 @@ type (
 	UserTroubleshootingSessionEntities            []UserTroubleshootingSessionEntity
 	UserTroubleshootingSessionWithDetailsEntities []UserTroubleshootingSessionWithDetailsEntity
 	UserTroubleshootingJourneyEntities            []UserTroubleshootingJourneyEntity
+	SessionStepEntities                           []SessionStepEntity
 )
 type UserTroubleshootingSessionEntity struct {
 	ID            uint
@@ -50,9 +51,29 @@ type UserTroubleshootingJourneyEntity struct {
 	FromTroubleshootingStepID    uint
 	FromTroubleshootingStepTitle string
 	ToTroubleshootingStepID      uint
+	ToTroubleshootingStepTitle   string
 	Description                  string
 	CreatedAt                    time.Time
 	FinishedAt                   *time.Time
+}
+
+type SessionByIdFilter struct {
+	UserID    uint
+	SessionID uint
+}
+
+type SessionStepEntity struct {
+	FromStepID    uint
+	FromStepTitle string
+	ToStepID      uint
+	ToStepTitle   string
+	CreatedAt     time.Time
+	FinishedAt    *time.Time
+}
+
+type SessionByIdResponse struct {
+	UserTroubleshootingSessionWithDetailsEntity
+	Steps SessionStepEntities
 }
 
 type UserTroubleshootingSessionListFilter struct {
@@ -152,4 +173,21 @@ func (f UserTroubleshootingSessionGetFilter) FilterMap() map[string]any {
 	}
 
 	return filter
+}
+
+func (entities UserTroubleshootingJourneyEntities) toSessionStepEntities() SessionStepEntities {
+	result := make(SessionStepEntities, 0, len(entities))
+
+	for _, entity := range entities {
+		result = append(result, SessionStepEntity{
+			FromStepID:    entity.FromTroubleshootingStepID,
+			FromStepTitle: entity.FromTroubleshootingStepTitle,
+			ToStepID:      entity.ToTroubleshootingStepID,
+			ToStepTitle:   entity.ToTroubleshootingStepTitle,
+			CreatedAt:     entity.CreatedAt,
+			FinishedAt:    entity.FinishedAt,
+		})
+	}
+
+	return result
 }

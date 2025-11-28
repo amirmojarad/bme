@@ -17,6 +17,7 @@ type UserTroubleshootingService interface {
 	DeclineSession(ctx context.Context, userID uint) error
 	DoneSession(ctx context.Context, userID uint) error
 	PrevStep(ctx context.Context, req service.UserTroubleshootingPrevStepRequest) error
+	SessionByID(ctx context.Context, req service.SessionByIdFilter) (service.SessionByIdResponse, error)
 }
 
 type UserTroubleshooting struct {
@@ -247,4 +248,34 @@ func (c UserTroubleshooting) PrevStep(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{})
+}
+
+func (c UserTroubleshooting) SessionByID(ctx *gin.Context) {
+	var (
+		req    SessionByIdFilter
+		header HeaderEntityBindingRequired
+	)
+
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	if err := ctx.ShouldBindHeader(&header); err != nil {
+		writeBindingErrorResponse(ctx, err)
+
+		return
+	}
+
+	req.UserID = header.UserID
+
+	session, err := c.svc.SessionByID(ctx, req.toSvc())
+	if err != nil {
+		writeErrorResponse(ctx, err, c.logger)
+
+		return
+	}
+
+	ctx.JSON(http.StatusOK, toViewSessionByIdResponse(session))
 }

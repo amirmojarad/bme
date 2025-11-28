@@ -68,7 +68,7 @@ func (r UserTroubleshootingSessions) ListWithDetails(
 		query.Scopes(Paginate(paginationMeta, WithFullQ(query)))
 	}
 
-	if err := query.Order("CASE WHEN user_troubleshooting_sessions.status = 'active' THEN 1    WHEN user_troubleshooting_sessions.status = 'done'   THEN 2    ELSE 3  END").Order("created_at").Debug().Find(&entities).Error; err != nil {
+	if err := query.Order("CASE WHEN user_troubleshooting_sessions.status = 'active' THEN 1    WHEN user_troubleshooting_sessions.status = 'done'   THEN 2    ELSE 3  END").Order("created_at desc").Debug().Find(&entities).Error; err != nil {
 		return service.UserTroubleshootingSessionsListWithDetailsResp{}, errors.WithStack(err)
 	}
 

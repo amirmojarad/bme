@@ -36,6 +36,7 @@ func SetupUserTroubleshootingRoutes(router gin.IRoutes, ctrl *UserTroubleshootin
 	router.PATCH("/decline", ctrl.DeclineSession)
 	router.PATCH("/done", ctrl.DoneSession)
 	router.GET("/session", ctrl.CurrentActiveSession)
+	router.GET("/session/:id", ctrl.SessionByID)
 	router.POST("/session/steps/next", ctrl.NextStep)
 	router.POST("/session/steps/prev", ctrl.PrevStep)
 }

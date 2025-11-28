@@ -11,6 +11,7 @@ import (
 type (
 	UserTroubleshootingSessionWithDetailsEntities []UserTroubleshootingSessionWithDetailsEntity
 	TroubleshootingStepTitleAndIDEntities         []TroubleshootingStepTitleAndIDEntity
+	SessionStepEntities                           []SessionStepEntity
 )
 
 type UserTroubleshootingSessionWithDetailsEntity struct {
@@ -26,6 +27,7 @@ type UserTroubleshootingSessionWithDetailsEntity struct {
 	CurrentTroubleshootingStep TroubleShootingStepEntity                   `json:"current_troubleshooting_step,omitempty"`
 	NextSteps                  TroubleshootingStepTitleAndIDEntities       `json:"next_steps"`
 	PrevStep                   TroubleshootingStepTitleAndIDEntities       `json:"prev_steps"`
+	FinishedAt                 *time.Time                                  `json:"finished_at"`
 }
 
 type TroubleshootingStepTitleAndIDEntity struct {
@@ -68,6 +70,32 @@ type UserTroubleshootingNextStepRequest struct {
 type UserTroubleshootingPrevStepRequest struct {
 	UserID     uint `json:"-"`
 	PrevStepID uint `json:"prev_step_id" binding:"required"`
+}
+
+type SessionByIdFilter struct {
+	ID     uint `uri:"id" binding:"required"`
+	UserID uint `json:"-"`
+}
+
+type SessionStepEntity struct {
+	FromStepID    uint       `json:"from_step_id"`
+	FromStepTitle string     `json:"from_step_title"`
+	ToStepID      uint       `json:"to_step_id" `
+	ToStepTitle   string     `json:"to_step_title"`
+	CreatedAt     time.Time  `json:"created_at"`
+	FinishedAt    *time.Time `json:"finished_at"`
+}
+
+type SessionByIdResponse struct {
+	ID               uint                                        `json:"id,omitempty"`
+	DeviceID         uint                                        `json:"device_id,omitempty"`
+	DeviceTitle      string                                      `json:"device_title,omitempty"`
+	DeviceErrorID    uint                                        `json:"device_error_id,omitempty"`
+	DeviceErrorTitle string                                      `json:"device_error_title,omitempty"`
+	Status           constants.UserTroubleshootingSessionsStatus `json:"status,omitempty"`
+	CreatedAt        time.Time                                   `json:"created_at"`
+	FinishedAt       *time.Time                                  `json:"finished_at"`
+	Steps            SessionStepEntities                         `json:"steps"`
 }
 
 func (req UserTroubleshootingSessionCreateRequest) toSvc() service.UserTroubleshootingSessionCreateRequest {
@@ -123,6 +151,7 @@ func toViewUserTroubleshootingSessionWithDetailsEntityFromSvc(svcEntity service.
 		CurrentStepID:              svcEntity.CurrentStepID,
 		NextSteps:                  toViewTroubleshootingStepTitleAndIDEntities(svcEntity.NextSteps),
 		PrevStep:                   toViewTroubleshootingStepTitleAndIDEntities(svcEntity.PrevStep),
+		FinishedAt:                 svcEntity.FinishedAt,
 	}
 }
 
@@ -170,5 +199,47 @@ func (req UserTroubleshootingPrevStepRequest) toSvc() service.UserTroubleshootin
 	return service.UserTroubleshootingPrevStepRequest{
 		UserID:     req.UserID,
 		PrevStepID: req.PrevStepID,
+	}
+}
+
+func (f SessionByIdFilter) toSvc() service.SessionByIdFilter {
+	return service.SessionByIdFilter{
+		UserID:    f.UserID,
+		SessionID: f.ID,
+	}
+}
+
+func toViewSessionByIdResponse(resp service.SessionByIdResponse) SessionByIdResponse {
+	return SessionByIdResponse{
+		ID:               resp.ID,
+		DeviceID:         resp.DeviceID,
+		DeviceTitle:      resp.DeviceTitle,
+		DeviceErrorID:    resp.DeviceErrorID,
+		DeviceErrorTitle: resp.DeviceErrorTitle,
+		Status:           resp.Status,
+		CreatedAt:        resp.CreatedAt,
+		FinishedAt:       resp.FinishedAt,
+		Steps:            toViewSteps(resp.Steps),
+	}
+}
+
+func toViewSteps(steps service.SessionStepEntities) SessionStepEntities {
+	result := make(SessionStepEntities, 0, len(steps))
+
+	for _, step := range steps {
+		result = append(result, toViewStepEntity(step))
+	}
+
+	return result
+}
+
+func toViewStepEntity(step service.SessionStepEntity) SessionStepEntity {
+	return SessionStepEntity{
+		FromStepID:    step.FromStepID,
+		FromStepTitle: step.FromStepTitle,
+		ToStepID:      step.ToStepID,
+		ToStepTitle:   step.ToStepTitle,
+		CreatedAt:     step.CreatedAt,
+		FinishedAt:    step.FinishedAt,
 	}
 }

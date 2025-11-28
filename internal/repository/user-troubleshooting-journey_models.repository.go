@@ -14,6 +14,7 @@ type UserTroubleshootingJourneyEntity struct {
 	FromTroubleshootingStepID    uint
 	FromTroubleshootingStep      TroubleshootingStepEntity `gorm:"foreignkey:FromTroubleshootingStepID; references:ID"`
 	ToTroubleshootingStepID      uint
+	ToTroubleshootingStep        TroubleshootingStepEntity `gorm:"foreignkey:ToTroubleshootingStepID; references:ID"`
 	Description                  string
 	CreatedAt                    time.Time
 	FinishedAt                   *time.Time
@@ -40,6 +41,7 @@ func (entity UserTroubleshootingJourneyEntity) toSvc() service.UserTroubleshooti
 		Description:                  entity.Description,
 		CreatedAt:                    entity.CreatedAt,
 		FromTroubleshootingStepTitle: entity.FromTroubleshootingStep.Title,
+		ToTroubleshootingStepTitle:   entity.ToTroubleshootingStep.Title,
 		FinishedAt:                   entity.FinishedAt,
 	}
 }

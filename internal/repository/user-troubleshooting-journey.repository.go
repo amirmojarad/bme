@@ -47,7 +47,12 @@ func (r *UserTroubleshootingJourney) Latest(ctx context.Context, sessionID uint)
 func (r *UserTroubleshootingJourney) List(ctx context.Context, sessionID uint) (service.UserTroubleshootingJourneyEntities, error) {
 	entities := make(UserTroubleshootingJourneyEntities, 0)
 
-	if err := r.DB(ctx).Model(&UserTroubleshootingJourneyEntity{}).Where("user_troubleshooting_session_id = ?", sessionID).Order("created_at").Find(&entities).Error; err != nil {
+	if err := r.DB(ctx).
+		Model(&UserTroubleshootingJourneyEntity{}).
+		Preload("FromTroubleshootingStep").
+		Preload("ToTroubleshootingStep").
+		Where("user_troubleshooting_session_id = ?", sessionID).
+		Order("created_at").Find(&entities).Error; err != nil {
 		return service.UserTroubleshootingJourneyEntities{}, errors.WithStack(err)
 	}
 
