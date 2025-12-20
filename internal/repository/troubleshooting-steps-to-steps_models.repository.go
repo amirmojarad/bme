@@ -7,7 +7,8 @@ import (
 )
 
 type (
-	TroubleshootingStepsToStepsEntities []TroubleshootingStepsToStepsEntity
+	TroubleshootingStepsToStepsEntities            []TroubleshootingStepsToStepsEntity
+	TroubleshootingStepsToStepsWithDetailsEntities []TroubleshootingStepsToStepsWithDetailsEntity
 )
 
 type TroubleshootingStepsToStepsEntity struct {
@@ -20,6 +21,17 @@ type TroubleshootingStepsToStepsEntity struct {
 	CreatedBy                     uint
 	UpdatedBy                     uint
 	DeletedBy                     uint
+}
+
+type TroubleshootingStepsToStepsWithDetailsEntity struct {
+	DeviceID         uint   `gorm:"device_id"`
+	DeviceTitle      string `gorm:"device_title"`
+	DeviceErrorID    uint   `gorm:"device_error_id"`
+	DeviceErrorTitle string `gorm:"device_error_title"`
+	FromStepID       uint   `gorm:"from_step_id"`
+	FromStepTitle    string `gorm:"from_step_title"`
+	ToStepID         uint   `gorm:"to_step_id"`
+	ToStepTitle      string `gorm:"to_step_title"`
 }
 
 func (TroubleshootingStepsToStepsEntity) TableName() string {
@@ -82,4 +94,27 @@ func (entities TroubleshootingStepsToStepsEntities) toSvcTroubleshootingEntities
 	}
 
 	return result
+}
+
+func (entities TroubleshootingStepsToStepsWithDetailsEntities) toSvc() service.TroubleshootingStepsToStepEntities {
+	result := make(service.TroubleshootingStepsToStepEntities, 0, len(entities))
+
+	for _, entity := range entities {
+		result = append(result, entity.toSvc())
+	}
+
+	return result
+}
+
+func (entity TroubleshootingStepsToStepsWithDetailsEntity) toSvc() service.TroubleshootingStepsToStepEntity {
+	return service.TroubleshootingStepsToStepEntity{
+		DeviceID:         entity.DeviceID,
+		DeviceTitle:      entity.DeviceErrorTitle,
+		DeviceErrorID:    entity.DeviceErrorID,
+		DeviceErrorTitle: entity.DeviceErrorTitle,
+		FromStepID:       entity.FromStepID,
+		FromStepTitle:    entity.FromStepTitle,
+		ToStepID:         entity.ToStepID,
+		ToStepTitle:      entity.ToStepTitle,
+	}
 }

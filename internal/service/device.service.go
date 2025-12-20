@@ -24,6 +24,8 @@ type DeviceTroubleshootingStepsRepository interface {
 
 type DeviceTroubleshootingStepsToStepsRepository interface {
 	BulkCreate(ctx context.Context, req TroubleshootingStepsToStepsCreateReq) error
+	List(ctx context.Context,
+		filter TroubleshootingStepsListStepsFilter) (TroubleshootingStepsToStepEntities, error)
 }
 type Device struct {
 	repo                            DeviceRepository

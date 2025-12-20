@@ -10,6 +10,7 @@ type (
 	UserTroubleshootingSessionWithDetailsEntities []UserTroubleshootingSessionWithDetailsEntity
 	UserTroubleshootingJourneyEntities            []UserTroubleshootingJourneyEntity
 	SessionStepEntities                           []SessionStepEntity
+	TroubleshootingStepsToStepEntities            []TroubleshootingStepsToStepEntity
 )
 type UserTroubleshootingSessionEntity struct {
 	ID            uint
@@ -122,6 +123,22 @@ type UserTroubleshootingJourneyCreateRequest struct {
 	ToTroubleshootingStepID   uint
 }
 
+type TroubleshootingStepsListStepsFilter struct {
+	DeviceID      *uint
+	DeviceErrorID *uint
+}
+
+type TroubleshootingStepsToStepEntity struct {
+	DeviceID         uint
+	DeviceTitle      string
+	DeviceErrorID    uint
+	DeviceErrorTitle string
+	FromStepID       uint
+	FromStepTitle    string
+	ToStepID         uint
+	ToStepTitle      string
+}
+
 func (f UserTroubleshootingSessionListFilter) FilterMap() map[string]any {
 	filter := make(map[string]any)
 
@@ -190,4 +207,22 @@ func (entities UserTroubleshootingJourneyEntities) toSessionStepEntities() Sessi
 	}
 
 	return result
+}
+
+func (f TroubleshootingStepsListStepsFilter) FilterMap() map[string]any {
+	filter := make(map[string]any)
+
+	if f.DeviceID != nil {
+		filter["device_id"] = *f.DeviceID
+	}
+
+	if f.DeviceErrorID != nil {
+		filter["device_error_id"] = *f.DeviceErrorID
+	}
+
+	if f.StepTitle != nil {
+		filter["step_title"] = *f.StepTitle
+	}
+
+	return filter
 }
